@@ -13,7 +13,7 @@ import siteIcon from '../../assets/icons/site-icon.png';
 import Image from 'next/image';
 
 /** TEMP: replace with real auth */
-const role: 'PUBLIC' | 'USER' | 'HOST' | 'ADMIN' = 'ADMIN';
+const role: 'PUBLIC' | 'USER' | 'HOST' | 'ADMIN' = 'PUBLIC';
 
 export default function Navbar() {
     return (
@@ -39,12 +39,14 @@ export default function Navbar() {
                         {role === 'PUBLIC' && (
                             <>
                                 <NavLink href='/events'>Explore Events</NavLink>
-                                <NavLink href='/register?role=host'>
+                                <NavLink href='/registration?role=host'>
                                     Become a Host
                                 </NavLink>
                                 <NavLink href='/login'>Login</NavLink>
                                 <Button asChild>
-                                    <Link href='/register'>Register</Link>
+                                    <Link href='/registration'>
+                                        Registration
+                                    </Link>
                                 </Button>
                             </>
                         )}
