@@ -2,6 +2,7 @@ import Logo from '@/assets/icons/Logo';
 import registrationImage from '../../../assets/images/registration-image.jpg';
 import Link from 'next/link';
 import Image from 'next/image';
+import RegistrationForm from '@/components/module/auth/RegistrationForm';
 
 export default function RegistrationPage() {
     return (
@@ -20,7 +21,7 @@ export default function RegistrationPage() {
                 </div>
                 <div className='flex flex-1 items-center justify-center'>
                     <div className='w-full max-w-xs'>
-                        {/* <RegistrationForm /> */}
+                        <RegistrationForm />
                     </div>
                 </div>
             </div>

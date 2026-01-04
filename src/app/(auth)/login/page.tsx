@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Logo from '@/assets/icons/Logo';
 import Image from 'next/image';
 import loginImage from '../../../assets/images/login-image.jpg';
+import LoginForm from '@/components/module/auth/LoginForm';
 
 export default function LoginPage() {
     return (
@@ -19,7 +20,9 @@ export default function LoginPage() {
                     </Link>
                 </div>
                 <div className='flex flex-1 items-center justify-center'>
-                    <div className='w-full max-w-xs'>{/* <LoginForm /> */}</div>
+                    <div className='w-full max-w-xs'>
+                        <LoginForm />
+                    </div>
                 </div>
             </div>
             <div className='bg-muted relative hidden lg:block'>
