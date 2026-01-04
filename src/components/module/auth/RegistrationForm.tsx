@@ -9,14 +9,12 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import {Input} from '@/components/ui/input';
+import {registerUser} from '@/services/auth/registerUser';
 import {useActionState} from 'react';
 
 export default function RegistrationForm() {
-    // const [state, formAction, isPending] = useActionState(
-    //     registerPatient,
-    //     null,
-    // );
-    // console.log(state, 'state');
+    const [state, formAction, isPending] = useActionState(registerUser, null);
+    console.log(state, 'state');
 
     // const getFieldError = (fieldName: string) => {
     //     if (state && state.errors) {
@@ -33,9 +31,7 @@ export default function RegistrationForm() {
     //     }
     // };
     return (
-        <form
-        // action={formAction}
-        >
+        <form action={formAction}>
             <FieldGroup>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                     {/* Name */}
@@ -116,13 +112,10 @@ export default function RegistrationForm() {
                 </div>
                 <FieldGroup className='mt-4'>
                     <Field>
-                        <Button
-                            type='submit'
-                            // disabled={isPending}
-                        >
-                            {/* {isPending
+                        <Button type='submit' disabled={isPending}>
+                            {isPending
                                 ? 'Creating Account...'
-                                : 'Create Account'} */}
+                                : 'Create Account'}
                         </Button>
 
                         <FieldDescription className='px-6 text-center'>
