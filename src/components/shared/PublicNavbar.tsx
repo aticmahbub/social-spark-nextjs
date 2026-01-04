@@ -9,16 +9,26 @@ import {
 } from '@/components/ui/navigation-menu';
 import {cn} from '@/lib/utils';
 import {Button} from '@/components/ui/button';
+import siteIcon from '../../assets/icons/site-icon.png';
+import Image from 'next/image';
 
 /** TEMP: replace with real auth */
-const role: 'PUBLIC' | 'USER' | 'HOST' | 'ADMIN' = 'PUBLIC';
+const role: 'PUBLIC' | 'USER' | 'HOST' | 'ADMIN' = 'ADMIN';
 
 export default function Navbar() {
     return (
         <header className='border-b bg-background'>
             <div className='container mx-auto flex h-16 items-center justify-between px-4'>
-                {/* Logo */}
-                <Link href='/' className='text-xl font-bold'>
+                <Link
+                    href='/'
+                    className='text-xl font-bold flex items-center gap-2'
+                >
+                    <Image
+                        height={40}
+                        width={40}
+                        src={siteIcon}
+                        alt='Social Spark Logo'
+                    />
                     Social<span className='text-primary'>Spark</span>
                 </Link>
 
