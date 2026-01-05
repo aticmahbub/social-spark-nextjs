@@ -14,19 +14,18 @@ import {useActionState} from 'react';
 
 export default function LoginForm() {
     const [state, formAction, isPending] = useActionState(loginUser, null);
-    console.log(state);
 
-    // const getFieldError = (fieldName: string) => {
-    //     if (state && state.errors) {
-    //         const error = state.errors.find(
-    //             (err: any) => err.field === fieldName,
-    //         );
-    //         return error.message;
-    //     } else {
-    //         return null;
-    //     }
-    // };
-    // console.log(state);
+    const getFieldError = (fieldName: string) => {
+        if (state && state.errors) {
+            const error = state.errors.find(
+                (err: any) => err.field === fieldName,
+            );
+            return error?.message;
+        } else {
+            return null;
+        }
+    };
+    console.log(state);
     return (
         <form action={formAction}>
             <FieldGroup>
@@ -42,11 +41,11 @@ export default function LoginForm() {
                             //   required
                         />
 
-                        {/* {getFieldError('email') && (
+                        {getFieldError('email') && (
                             <FieldDescription className='text-red-600'>
                                 {getFieldError('email')}
                             </FieldDescription>
-                        )} */}
+                        )}
                     </Field>
 
                     {/* Password */}
@@ -59,11 +58,11 @@ export default function LoginForm() {
                             placeholder='Enter your password'
                             //   required
                         />
-                        {/* {getFieldError('password') && (
+                        {getFieldError('password') && (
                             <FieldDescription className='text-red-600'>
                                 {getFieldError('password')}
                             </FieldDescription>
-                        )} */}
+                        )}
                     </Field>
                 </div>
                 <FieldGroup className='mt-4'>
