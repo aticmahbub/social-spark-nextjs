@@ -1,14 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {jwtDecode} from 'jwt-decode';
 import {NextRequest, NextResponse} from 'next/server';
-
-export interface userInterface {
-    id: string;
-    email: string;
-    role: 'ADMIN' | 'HOST' | 'USER';
-    exp: number;
-    iat: number;
-}
+import {UserInterface} from './types/user.types';
 
 const authRoutes = ['/login', '/registration', '/forgot-password'];
 
@@ -28,7 +21,7 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL(`/login?redirect=${pathname}`));
     }
 
-    let user: userInterface | null = null;
+    let user: UserInterface | null = null;
 
     if (accessToken) {
         try {
