@@ -28,31 +28,52 @@ export const loginUser = async (
         };
 
         const validatedFields = loginValidationZodSchema.safeParse(loginData);
-        console.log(validatedFields);
 
         if (!validatedFields.success) {
             return {
                 success: false,
-                errors: validatedFields.error.issues.map((issue) => {
-                    return {
-                        field: issue.path[0],
-                        message: issue.message,
-                    };
-                }),
+                errors: validatedFields.error.issues.map((issue) => ({
+                    field: issue.path[0],
+                    message: issue.message,
+                })),
             };
         }
 
-        const res = await fetch('http://localhost:5000/api/v1/auth/login', {
-            method: 'POST',
-            body: JSON.stringify(loginData),
-            headers: {
-                'Content-Type': 'application/json',
+        const response = await fetch(
+            'http://localhost:4000/api/v1/auth/login',
+            {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify(loginData),
             },
-        }).then((res) => res.json());
+        );
+        const contentType = response.headers.get('content-type');
 
-        return res;
+        if (!contentType?.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response:', text);
+            return {
+                success: false,
+                message: 'Invalid server response',
+            };
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                message: data.message || 'Login failed',
+            };
+        }
+
+        return data;
     } catch (error) {
-        console.log(error);
-        return {error: 'Login failed'};
+        console.error('Login error:', error);
+        return {
+            success: false,
+            message: 'Login failed',
+        };
     }
 };

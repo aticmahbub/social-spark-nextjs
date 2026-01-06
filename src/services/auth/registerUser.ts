@@ -40,7 +40,6 @@ export const registerUser = async (
 
         const validatedFields =
             registrationValidationZodSchema.safeParse(registrationData);
-        console.log(validatedFields);
 
         if (!validatedFields.success) {
             return {
@@ -64,7 +63,6 @@ export const registerUser = async (
                 body: newFormData,
             },
         ).then((res) => res.json());
-        console.log(res);
 
         return res;
     } catch (error) {
