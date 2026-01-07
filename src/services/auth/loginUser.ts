@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
+import {cookies} from 'next/headers';
 import z from 'zod';
 
 const loginValidationZodSchema = z.object({
@@ -20,6 +21,7 @@ export const loginUser = async (
     _currentState: any,
     formData: any,
 ): Promise<any> => {
+    const cookieStore = await cookies();
     try {
         const loginData = {
             email: formData.get('email'),
@@ -65,6 +67,21 @@ export const loginUser = async (
                 success: false,
                 message: data.message || 'Login failed',
             };
+        }
+        if (response.ok) {
+            cookieStore.set('accessToken', data.data.accessToken, {
+                httpOnly: true,
+                sameSite: 'lax',
+                secure: false,
+                path: '/',
+            });
+
+            cookieStore.set('refreshToken', data.data.refreshToken, {
+                httpOnly: true,
+                sameSite: 'lax',
+                secure: false,
+                path: '/',
+            });
         }
 
         return data;

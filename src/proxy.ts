@@ -1,9 +1,62 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {jwtDecode} from 'jwt-decode';
+import {jwtDecode, JwtPayload} from 'jwt-decode';
 import {NextRequest, NextResponse} from 'next/server';
-import {UserInterface} from './types/user.types';
+import jwt from 'jsonwebtoken';
+import {cookies} from 'next/headers';
+import {URL} from 'url';
+
+type UserRole = 'USER' | 'HOST' | 'ADMIN';
+type RouteConfig = {exact: string[]; patterns: RegExp[]};
 
 const authRoutes = ['/login', '/registration', '/forgot-password'];
+const commonProtectedRoutes: RouteConfig = {
+    exact: ['my-profile', 'settings'],
+    patterns: [],
+};
+
+const userProtectedRoutes: RouteConfig = {patterns: [/^\/user/], exact: []};
+const hostProtectedRoutes: RouteConfig = {patterns: [/^\/host/], exact: []};
+const adminProtectedRoutes: RouteConfig = {patterns: [/^\/admin/], exact: []};
+
+const isAuthRoute = (pathname: string) => {
+    return authRoutes.some((route) => route === pathname);
+};
+
+const isRouteMatched = (pathname: string, routes: RouteConfig): boolean => {
+    if (routes.exact.includes(pathname)) {
+        return true;
+    }
+    return routes.patterns.some((pattern: RegExp) => pattern.test(pathname));
+};
+
+export const getDefaultDashboardRoute = (role: UserRole): string => {
+    if (role === 'ADMIN') {
+        return '/admin/dashboard';
+    }
+    if (role === 'HOST') {
+        return '/host/dashboard';
+    }
+    if (role === 'USER') {
+        return '/user/dashboard';
+    }
+    return '/';
+};
+
+export const getRouteOwner = (pathname: string): UserRole | 'COMMON' | null => {
+    if (isRouteMatched(pathname, adminProtectedRoutes)) {
+        return 'ADMIN';
+    }
+    if (isRouteMatched(pathname, hostProtectedRoutes)) {
+        return 'HOST';
+    }
+    if (isRouteMatched(pathname, userProtectedRoutes)) {
+        return 'USER';
+    }
+    if (isRouteMatched(pathname, commonProtectedRoutes)) {
+        return 'COMMON';
+    }
+    return null;
+};
 
 const roleBasedRoutes = {
     ADMIN: ['/admin/dashboard'],
@@ -12,78 +65,39 @@ const roleBasedRoutes = {
 };
 
 export async function proxy(request: NextRequest) {
+    const pathname = request.nextUrl.pathname;
+    const cookieStore = await cookies();
+
     const accessToken = request.cookies.get('accessToken')?.value;
-    const refreshToken = request.cookies.get('refreshToken')?.value;
 
-    const {pathname} = request.nextUrl;
-
-    if (!accessToken && !refreshToken && !authRoutes.includes(pathname)) {
-        return NextResponse.redirect(new URL(`/login?redirect=${pathname}`));
-    }
-
-    let user: UserInterface | null = null;
+    let userRole: UserRole | null = null;
 
     if (accessToken) {
-        try {
-            user = jwtDecode(accessToken);
-        } catch (err) {
-            console.log('Error decoding access token:', err);
-            return NextResponse.redirect(
-                new URL(`/login?redirect=${pathname}`, request.url),
-            );
+        const verifiedToken = jwt.verify(
+            accessToken,
+            process.env.JWT_ACCESS_SECRET as string,
+        );
+
+        if (typeof verifiedToken === 'string') {
+            cookieStore.delete('accessToken');
+            cookieStore.delete('refreshToken');
+
+            return NextResponse.redirect(new URL('/login', request.url));
         }
+        userRole = verifiedToken.role;
     }
 
-    if (!user && refreshToken) {
-        try {
-            const refreshRes = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({refreshToken}),
-                },
-            );
-            if (refreshRes.ok) {
-                const newAccessToken =
-                    request.cookies.get('accessToken')?.value;
-                user = jwtDecode(newAccessToken!);
-                return NextResponse.next();
-            } else {
-                const response = NextResponse.redirect(
-                    new URL(`/login?redirect=${pathname}`, request.url),
-                );
-                response.cookies.delete('accessToken');
-                response.cookies.delete('refreshToken');
-                return response;
-            }
-        } catch (err) {
-            console.log('Error refreshing token:', err);
-            const response = NextResponse.redirect(
-                new URL(`/login?redirect=${pathname}`, request.url),
-            );
-            response.cookies.delete('accessToken');
-            response.cookies.delete('refreshToken');
-            return response;
-        }
-    }
+    const routerOwner = getRouteOwner(pathname);
 
-    if (user) {
-        const allowedRoutes = user ? roleBasedRoutes[user.role] : [];
-        if (
-            allowedRoutes &&
-            allowedRoutes.some((r: any) => pathname.startsWith(r))
-        ) {
-            return NextResponse.next();
-        } else {
-            return NextResponse.redirect(new URL(`/unauthorized`, request.url));
-        }
-    }
+    const isAuth = isAuthRoute(pathname);
 
-    if (user && authRoutes.includes(pathname)) {
-        return NextResponse.redirect(new URL(`/`));
+    if (accessToken && isAuth) {
+        return NextResponse.redirect(
+            new URL(
+                getDefaultDashboardRoute(userRole as UserRole),
+                request.url,
+            ),
+        );
     }
 
     return NextResponse.next();
