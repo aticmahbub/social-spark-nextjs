@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {jwtDecode, JwtPayload} from 'jwt-decode';
 import {NextRequest, NextResponse} from 'next/server';
 import jwt from 'jsonwebtoken';
-import {cookies} from 'next/headers';
 import {URL} from 'url';
 import {
     getDefaultDashboardRoute,
@@ -10,10 +8,10 @@ import {
     isAuthRoute,
     UserRole,
 } from './utils/auth';
+import {deleteCookie} from './services/auth/tokenHandlers';
 
 export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
-    const cookieStore = await cookies();
 
     const accessToken = request.cookies.get('accessToken')?.value;
 
@@ -26,8 +24,8 @@ export async function proxy(request: NextRequest) {
         );
 
         if (typeof verifiedToken === 'string') {
-            cookieStore.delete('accessToken');
-            cookieStore.delete('refreshToken');
+            await deleteCookie('accessToken');
+            await deleteCookie('refreshToken');
 
             return NextResponse.redirect(new URL('/login', request.url));
         }
