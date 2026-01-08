@@ -100,6 +100,37 @@ export async function proxy(request: NextRequest) {
         );
     }
 
+    if (routerOwner === null) {
+        return NextResponse.next();
+    }
+
+    if (!accessToken) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+
+        return NextResponse.redirect(loginUrl);
+    }
+
+    if (routerOwner === 'COMMON') {
+        return NextResponse.next();
+    }
+
+    if (
+        routerOwner === 'ADMIN' ||
+        routerOwner === 'HOST' ||
+        routerOwner === 'USER'
+    ) {
+        if (userRole !== routerOwner) {
+            return NextResponse.redirect(
+                new URL(
+                    getDefaultDashboardRoute(userRole as UserRole),
+                    request.url,
+                ),
+            );
+        }
+    }
+    console.log(userRole);
+
     return NextResponse.next();
 }
 
