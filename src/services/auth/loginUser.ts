@@ -122,12 +122,12 @@ export const loginUser = async (
         if (redirectTo) {
             const requestedPath = redirectTo.toString();
             if (isValidRedirectForRole(requestedPath, userRole)) {
-                redirect(requestedPath);
+                redirect(`${requestedPath}?loggedIn=true`);
             } else {
-                redirect(getDefaultDashboardRoute(userRole));
+                redirect(`${getDefaultDashboardRoute(userRole)}?loggedIn=true`);
             }
         } else {
-            redirect(getDefaultDashboardRoute(userRole));
+            redirect(`${getDefaultDashboardRoute(userRole)}?loggedIn=true`);
         }
     } catch (error: any) {
         // Re-throw NEXT_REDIRECT errors so Next.js can handle them

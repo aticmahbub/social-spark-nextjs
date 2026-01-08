@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/field';
 import {Input} from '@/components/ui/input';
 import {registerUser} from '@/services/auth/registerUser';
-import {useActionState} from 'react';
+import {useActionState, useEffect} from 'react';
+import {toast} from 'sonner';
 
 export default function RegistrationForm() {
     const [state, formAction, isPending] = useActionState(registerUser, null);
@@ -30,6 +31,12 @@ export default function RegistrationForm() {
             return null;
         }
     };
+
+    useEffect(() => {
+        if (state && !state.success && state.message) {
+            toast.error(state.message);
+        }
+    }, [state]);
     return (
         <form action={formAction}>
             <FieldGroup>

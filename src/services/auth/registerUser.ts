@@ -77,6 +77,13 @@ export const registerUser = async (
             throw error;
         }
         console.log(error);
-        return {success: false, message: 'Registration failed'};
+        return {
+            success: false,
+            message: `${
+                process.env.NODE_ENV === 'development'
+                    ? error?.message
+                    : 'Registration failed'
+            }`,
+        };
     }
 };
