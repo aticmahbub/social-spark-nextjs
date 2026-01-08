@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import {
     NavigationMenu,
@@ -11,11 +9,17 @@ import {cn} from '@/lib/utils';
 import {Button} from '@/components/ui/button';
 import siteIcon from '../../assets/icons/site-icon.png';
 import Image from 'next/image';
+import {getCookie} from '@/services/auth/tokenHandlers';
+import LogoutButton from './LogoutButton';
 
 /** TEMP: replace with real auth */
+
 const role: 'PUBLIC' | 'USER' | 'HOST' | 'ADMIN' = 'PUBLIC';
 
-export default function Navbar() {
+export default async function Navbar() {
+    const accessToken = await getCookie('accessToken');
+    const isLoggedIn = accessToken ? true : false;
+
     return (
         <header className='border-b bg-background'>
             <div className='container mx-auto flex h-16 items-center justify-between px-4'>
@@ -36,7 +40,7 @@ export default function Navbar() {
                 <NavigationMenu>
                     <NavigationMenuList className='flex items-center gap-6'>
                         {/* PUBLIC */}
-                        {role === 'PUBLIC' && (
+                        {accessToken && (
                             <>
                                 <NavLink href='/events'>Explore Events</NavLink>
                                 <NavLink href='/registration?role=host'>
@@ -52,12 +56,12 @@ export default function Navbar() {
                         )}
 
                         {/* USER */}
-                        {role === 'USER' && (
+                        {accessToken && (
                             <>
                                 <NavLink href='/events'>Explore Events</NavLink>
                                 <NavLink href='/my-events'>My Events</NavLink>
                                 <NavLink href='/profile/me'>Profile</NavLink>
-                                <NavLink href='/logout'>Logout</NavLink>
+                                <LogoutButton />
                             </>
                         )}
 
