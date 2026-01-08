@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
+import {
+    getDefaultDashboardRoute,
+    isValidRedirectForRole,
+    UserRole,
+} from '@/utils/auth';
+import {parse} from 'cookie';
+import jwt, {JwtPayload} from 'jsonwebtoken';
 import {cookies} from 'next/headers';
+import {redirect} from 'next/navigation';
 import z from 'zod';
 
 const loginValidationZodSchema = z.object({
@@ -21,8 +29,10 @@ export const loginUser = async (
     _currentState: any,
     formData: any,
 ): Promise<any> => {
-    const cookieStore = await cookies();
     try {
+        const redirectTo = formData.get('redirect') || null;
+        let accessTokenObject: null | any = null;
+        let refreshTokenObject: null | any = null;
         const loginData = {
             email: formData.get('email'),
             password: formData.get('password'),
@@ -33,63 +43,100 @@ export const loginUser = async (
         if (!validatedFields.success) {
             return {
                 success: false,
-                errors: validatedFields.error.issues.map((issue) => ({
-                    field: issue.path[0],
-                    message: issue.message,
-                })),
+                errors: validatedFields.error.issues.map((issue) => {
+                    return {
+                        field: issue.path[0],
+                        message: issue.message,
+                    };
+                }),
             };
         }
 
-        const response = await fetch(
-            'http://localhost:4000/api/v1/auth/login',
-            {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                credentials: 'include',
-                body: JSON.stringify(loginData),
+        const res = await fetch('http://localhost:4000/api/v1/auth/login', {
+            method: 'POST',
+            body: JSON.stringify(loginData),
+            headers: {
+                'Content-Type': 'application/json',
             },
+        });
+
+        const result = await res.json();
+
+        const setCookieHeaders = res.headers.getSetCookie();
+        // console.log('setCookieHeaders:', setCookieHeaders, 'res:', res);
+
+        if (setCookieHeaders && setCookieHeaders.length > 0) {
+            setCookieHeaders.forEach((cookie: string) => {
+                const parsedCookie = parse(cookie);
+
+                if (parsedCookie['accessToken']) {
+                    accessTokenObject = parsedCookie;
+                }
+                if (parsedCookie['refreshToken']) {
+                    refreshTokenObject = parsedCookie;
+                }
+            });
+        } else {
+            throw new Error('No Set-Cookie header found');
+        }
+
+        if (!accessTokenObject) {
+            throw new Error('Tokens not found in cookies');
+        }
+
+        if (!refreshTokenObject) {
+            throw new Error('Tokens not found in cookies');
+        }
+
+        const cookieStore = await cookies();
+
+        cookieStore.set('accessToken', accessTokenObject.accessToken, {
+            secure: true,
+            httpOnly: true,
+            maxAge: parseInt(accessTokenObject['Max-Age']) || 1000 * 60 * 60,
+            path: accessTokenObject.Path || '/',
+            sameSite: accessTokenObject['SameSite'] || 'none',
+        });
+
+        cookieStore.set('refreshToken', refreshTokenObject.refreshToken, {
+            secure: true,
+            httpOnly: true,
+            maxAge:
+                parseInt(refreshTokenObject['Max-Age']) ||
+                1000 * 60 * 60 * 24 * 90,
+            path: refreshTokenObject.Path || '/',
+            sameSite: refreshTokenObject['SameSite'] || 'none',
+        });
+        const verifiedToken: JwtPayload | string = jwt.verify(
+            accessTokenObject.accessToken,
+            process.env.JWT_ACCESS_SECRET as string,
         );
-        const contentType = response.headers.get('content-type');
 
-        if (!contentType?.includes('application/json')) {
-            const text = await response.text();
-            console.error('Non-JSON response:', text);
-            return {
-                success: false,
-                message: 'Invalid server response',
-            };
+        if (typeof verifiedToken === 'string') {
+            throw new Error('Invalid token');
         }
 
-        const data = await response.json();
+        const userRole: UserRole = verifiedToken.role;
 
-        if (!response.ok) {
-            return {
-                success: false,
-                message: data.message || 'Login failed',
-            };
+        if (!result.success) {
+            throw new Error('Login failed');
         }
-        if (response.ok) {
-            cookieStore.set('accessToken', data.data.accessToken, {
-                httpOnly: true,
-                sameSite: 'lax',
-                secure: false,
-                path: '/',
-            });
-
-            cookieStore.set('refreshToken', data.data.refreshToken, {
-                httpOnly: true,
-                sameSite: 'lax',
-                secure: false,
-                path: '/',
-            });
+        if (redirectTo) {
+            const requestedPath = redirectTo.toString();
+            if (isValidRedirectForRole(requestedPath, userRole)) {
+                redirect(requestedPath);
+            } else {
+                redirect(getDefaultDashboardRoute(userRole));
+            }
+        } else {
+            redirect(getDefaultDashboardRoute(userRole));
         }
-
-        return data;
-    } catch (error) {
-        console.error('Login error:', error);
-        return {
-            success: false,
-            message: 'Login failed',
-        };
+    } catch (error: any) {
+        // Re-throw NEXT_REDIRECT errors so Next.js can handle them
+        if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+            throw error;
+        }
+        console.log(error);
+        return {error: 'Login failed'};
     }
 };

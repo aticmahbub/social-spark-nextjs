@@ -13,7 +13,7 @@ import {Input} from '@/components/ui/input';
 import {loginUser} from '@/services/auth/loginUser';
 import {useActionState} from 'react';
 
-export default function LoginForm() {
+export default function LoginForm({redirect}: {redirect?: string}) {
     const [state, formAction, isPending] = useActionState(loginUser, null);
 
     const getFieldError = (fieldName: string) => {
@@ -29,6 +29,9 @@ export default function LoginForm() {
     console.log(state);
     return (
         <form action={formAction}>
+            {redirect && (
+                <input type='hidden' name='redirect' value={redirect} />
+            )}
             <FieldGroup>
                 <div className='grid grid-cols-1 gap-4'>
                     {/* Email */}
@@ -75,7 +78,7 @@ export default function LoginForm() {
                         <FieldDescription className='px-6 text-center'>
                             Don&apos;t have an account?{' '}
                             <a
-                                href='/register'
+                                href='/registration'
                                 className='text-blue-600 hover:underline'
                             >
                                 Sign up

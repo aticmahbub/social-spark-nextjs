@@ -4,65 +4,12 @@ import {NextRequest, NextResponse} from 'next/server';
 import jwt from 'jsonwebtoken';
 import {cookies} from 'next/headers';
 import {URL} from 'url';
-
-type UserRole = 'USER' | 'HOST' | 'ADMIN';
-type RouteConfig = {exact: string[]; patterns: RegExp[]};
-
-const authRoutes = ['/login', '/registration', '/forgot-password'];
-const commonProtectedRoutes: RouteConfig = {
-    exact: ['my-profile', 'settings'],
-    patterns: [],
-};
-
-const userProtectedRoutes: RouteConfig = {patterns: [/^\/user/], exact: []};
-const hostProtectedRoutes: RouteConfig = {patterns: [/^\/host/], exact: []};
-const adminProtectedRoutes: RouteConfig = {patterns: [/^\/admin/], exact: []};
-
-const isAuthRoute = (pathname: string) => {
-    return authRoutes.some((route) => route === pathname);
-};
-
-const isRouteMatched = (pathname: string, routes: RouteConfig): boolean => {
-    if (routes.exact.includes(pathname)) {
-        return true;
-    }
-    return routes.patterns.some((pattern: RegExp) => pattern.test(pathname));
-};
-
-export const getDefaultDashboardRoute = (role: UserRole): string => {
-    if (role === 'ADMIN') {
-        return '/admin/dashboard';
-    }
-    if (role === 'HOST') {
-        return '/host/dashboard';
-    }
-    if (role === 'USER') {
-        return '/user/dashboard';
-    }
-    return '/';
-};
-
-export const getRouteOwner = (pathname: string): UserRole | 'COMMON' | null => {
-    if (isRouteMatched(pathname, adminProtectedRoutes)) {
-        return 'ADMIN';
-    }
-    if (isRouteMatched(pathname, hostProtectedRoutes)) {
-        return 'HOST';
-    }
-    if (isRouteMatched(pathname, userProtectedRoutes)) {
-        return 'USER';
-    }
-    if (isRouteMatched(pathname, commonProtectedRoutes)) {
-        return 'COMMON';
-    }
-    return null;
-};
-
-const roleBasedRoutes = {
-    ADMIN: ['/admin/dashboard'],
-    HOST: ['/host/dashboard'],
-    USER: ['/user/dashboard', '/user/profile'],
-};
+import {
+    getDefaultDashboardRoute,
+    getRouteOwner,
+    isAuthRoute,
+    UserRole,
+} from './utils/auth';
 
 export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
@@ -129,7 +76,6 @@ export async function proxy(request: NextRequest) {
             );
         }
     }
-    console.log(userRole);
 
     return NextResponse.next();
 }
