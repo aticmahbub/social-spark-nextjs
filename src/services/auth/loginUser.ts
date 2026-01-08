@@ -7,7 +7,7 @@ import {
 } from '@/utils/auth';
 import {parse} from 'cookie';
 import jwt, {JwtPayload} from 'jsonwebtoken';
-import {cookies} from 'next/headers';
+
 import {redirect} from 'next/navigation';
 import z from 'zod';
 import {setCookie} from './tokenHandlers';
@@ -64,7 +64,6 @@ export const loginUser = async (
         const result = await res.json();
 
         const setCookieHeaders = res.headers.getSetCookie();
-        // console.log('setCookieHeaders:', setCookieHeaders, 'res:', res);
 
         if (setCookieHeaders && setCookieHeaders.length > 0) {
             setCookieHeaders.forEach((cookie: string) => {
@@ -118,7 +117,7 @@ export const loginUser = async (
         const userRole: UserRole = verifiedToken.role;
 
         if (!result.success) {
-            throw new Error('Login failed');
+            throw new Error(result.message || 'Login failed');
         }
         if (redirectTo) {
             const requestedPath = redirectTo.toString();
@@ -135,7 +134,14 @@ export const loginUser = async (
         if (error?.digest?.startsWith('NEXT_REDIRECT')) {
             throw error;
         }
-        console.log(error);
-        return {error: 'Login failed'};
+
+        return {
+            success: false,
+            message: `${
+                process.env.NODE_ENV === 'development'
+                    ? error?.message
+                    : 'Login failed'
+            }`,
+        };
     }
 };
