@@ -2,7 +2,7 @@ import Logo from '@/assets/icons/Logo';
 import registrationImage from '../../../assets/images/registration-image.jpg';
 import Link from 'next/link';
 import Image from 'next/image';
-import RegistrationForm from '@/components/module/auth/RegistrationForm';
+import RegistrationForm from '@/components/module/Auth/RegistrationForm';
 
 export default function RegistrationPage() {
     return (

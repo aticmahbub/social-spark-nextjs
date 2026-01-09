@@ -39,13 +39,13 @@ export default function EventTable({events}: EventTableProps) {
 
         setIsDeletingDialog(false);
 
-        if (result.success) {
-            toast.success(result.message || 'Event deleted successfully');
-            setDeletingEvent(null);
-            handleRefresh();
-        } else {
-            toast.error(result.message || 'Failed to delete event');
-        }
+        // if (result.success) {
+        //     toast.success(result.message || 'Event deleted successfully');
+        //     setDeletingEvent(null);
+        //     handleRefresh();
+        // } else {
+        //     toast.error(result.message || 'Failed to delete event');
+        // }
     };
 
     return (

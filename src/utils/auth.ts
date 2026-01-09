@@ -94,3 +94,5 @@ export const isValidRedirectForRole = (
 
     return false;
 };
+
+export default getDefaultDashboardRoute;

@@ -1,5 +1,5 @@
 import {useRouter, useSearchParams} from 'next/navigation';
-import {useTransition} from 'react';
+import {useTransition, Suspense} from 'react';
 import {
     Select,
     SelectContent,
@@ -9,12 +9,16 @@ import {
 } from '../ui/select';
 
 interface SelectFilterProps {
-    paramName: string; // ?gender=
+    paramName: string;
     placeholder?: string;
     options: {label: string; value: string}[];
 }
 
-const SelectFilter = ({paramName, placeholder, options}: SelectFilterProps) => {
+function SelectFilterContent({
+    paramName,
+    placeholder,
+    options,
+}: SelectFilterProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
@@ -36,6 +40,7 @@ const SelectFilter = ({paramName, placeholder, options}: SelectFilterProps) => {
             router.push(`?${params.toString()}`);
         });
     };
+
     return (
         <Select
             value={currentValue}
@@ -55,6 +60,20 @@ const SelectFilter = ({paramName, placeholder, options}: SelectFilterProps) => {
             </SelectContent>
         </Select>
     );
-};
+}
 
-export default SelectFilter;
+export default function SelectFilter(props: SelectFilterProps) {
+    return (
+        <Suspense
+            fallback={
+                <Select disabled>
+                    <SelectTrigger>
+                        <SelectValue placeholder={props.placeholder} />
+                    </SelectTrigger>
+                </Select>
+            }
+        >
+            <SelectFilterContent {...props} />
+        </Suspense>
+    );
+}

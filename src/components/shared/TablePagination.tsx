@@ -2,7 +2,7 @@
 
 import {ChevronLeft, ChevronRight} from 'lucide-react';
 import {useRouter, useSearchParams} from 'next/navigation';
-import {useTransition} from 'react';
+import {useTransition, Suspense} from 'react';
 import {Button} from '../ui/button';
 
 interface TablePaginationProps {
@@ -10,7 +10,10 @@ interface TablePaginationProps {
     totalPages: number;
 }
 
-const TablePagination = ({currentPage, totalPages}: TablePaginationProps) => {
+function TablePaginationContent({
+    currentPage,
+    totalPages,
+}: TablePaginationProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const searchParams = useSearchParams();
@@ -83,11 +86,37 @@ const TablePagination = ({currentPage, totalPages}: TablePaginationProps) => {
             </Button>
 
             <span className='text-sm text-muted-foreground ml-2'>
-                {/* Page 9 of 20 */}
                 Page {currentPage} of {totalPages}
             </span>
         </div>
     );
-};
+}
 
-export default TablePagination;
+export default function TablePagination(props: TablePaginationProps) {
+    return (
+        <Suspense
+            fallback={
+                <div className='flex items-center justify-center gap-2'>
+                    <Button variant='outline' size='sm' disabled>
+                        <ChevronLeft className='h-4 w-4 mr-1' />
+                        Previous
+                    </Button>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        disabled
+                        className='w-10'
+                    >
+                        1
+                    </Button>
+                    <Button variant='outline' size='sm' disabled>
+                        Next
+                        <ChevronRight className='h-4 w-4 ml-1' />
+                    </Button>
+                </div>
+            }
+        >
+            <TablePaginationContent {...props} />
+        </Suspense>
+    );
+}

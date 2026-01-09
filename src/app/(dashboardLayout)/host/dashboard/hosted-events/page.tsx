@@ -6,9 +6,12 @@ import {TableSkeleton} from '@/components/shared/TableSkeleton';
 import {Suspense} from 'react';
 import EventTable from '@/components/module/Host/event/EventTable';
 import {hostedEvents} from '@/services/host/eventManagement';
-
+// Force dynamic rendering since we're using cookies
+export const dynamic = 'force-dynamic';
 const HostedEventsPage = async () => {
-    const result = await hostedEvents();
+    let token;
+    const result = await hostedEvents(token);
+
     return (
         <div>
             {' '}

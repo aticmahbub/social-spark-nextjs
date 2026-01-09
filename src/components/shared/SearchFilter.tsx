@@ -1,7 +1,8 @@
 'use client';
+
 import {Search} from 'lucide-react';
 import {useRouter, useSearchParams} from 'next/navigation';
-import {useEffect, useState, useTransition} from 'react';
+import {useEffect, useState, useTransition, Suspense} from 'react';
 import {Input} from '../ui/input';
 import {useDebounce} from '@/hooks/useDebounce';
 
@@ -10,10 +11,10 @@ interface SearchFilterProps {
     paramName?: string;
 }
 
-const SearchFilter = ({
+function SearchFilterContent({
     placeholder = 'Search...',
     paramName = 'searchTerm',
-}: SearchFilterProps) => {
+}: SearchFilterProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const searchParams = useSearchParams();
@@ -30,11 +31,11 @@ const SearchFilter = ({
         }
 
         if (debouncedValue) {
-            params.set(paramName, debouncedValue); // ?searchTerm=debouncedValue
-            params.set('page', '1'); // reset to first page on search
+            params.set(paramName, debouncedValue);
+            params.set('page', '1');
         } else {
-            params.delete(paramName); // remove searchTerm param
-            params.delete('page'); // reset to first page on search clear
+            params.delete(paramName);
+            params.delete('page');
         }
 
         startTransition(() => {
@@ -54,6 +55,23 @@ const SearchFilter = ({
             />
         </div>
     );
-};
+}
 
-export default SearchFilter;
+export default function SearchFilter(props: SearchFilterProps) {
+    return (
+        <Suspense
+            fallback={
+                <div className='relative'>
+                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                    <Input
+                        placeholder={props.placeholder}
+                        className='pl-10'
+                        disabled
+                    />
+                </div>
+            }
+        >
+            <SearchFilterContent {...props} />
+        </Suspense>
+    );
+}

@@ -9,7 +9,6 @@ export default function Home() {
                 <meta
                     name='description'
                     content='Social Spark is a social media platform for connecting with friends and family.'
-
                 />
             </Head>
             <main className='flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black'>
