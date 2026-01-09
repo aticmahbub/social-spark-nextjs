@@ -12,13 +12,13 @@ export const getCommonNavItems = (role: UserRole): NavSection[] => {
                     title: 'Dashboard',
                     href: defaultDashboard,
                     icon: 'LayoutDashboard',
-                    roles: ['USER', 'HOST', 'ADMIN'] as const,
+                    roles: ['USER', 'HOST', 'ADMIN'],
                 },
                 {
                     title: 'My Profile',
-                    href: `/my-profile`,
+                    href: `/profile/user`,
                     icon: 'User',
-                    roles: ['USER', 'HOST', 'ADMIN'] as const,
+                    roles: ['USER', 'HOST', 'ADMIN'],
                 },
             ],
         },
@@ -28,7 +28,7 @@ export const getCommonNavItems = (role: UserRole): NavSection[] => {
                 {
                     title: 'Change Password',
                     href: '/change-password',
-                    icon: 'Settings', // ✅ String
+                    icon: 'Settings',
                     roles: ['USER'],
                 },
             ],
@@ -36,59 +36,85 @@ export const getCommonNavItems = (role: UserRole): NavSection[] => {
     ];
 };
 
+export const userNavItems: NavSection[] = [
+    {
+        title: 'Events',
+        items: [
+            {
+                title: 'Upcoming joined events',
+                href: '/user/dashboard/joined-events',
+                icon: 'Calendar',
+                roles: ['USER'],
+            },
+            {
+                title: 'Explore events',
+                href: '/events',
+                icon: 'ClipboardList',
+                roles: ['USER'],
+            },
+            {
+                title: 'Saved events',
+                href: '/user/dashboard/saved-events',
+                icon: 'ClipboardList',
+                roles: ['USER'],
+            },
+            {
+                title: 'Past events',
+                href: '/user/dashboard/past-events',
+                icon: 'ClipboardList',
+                roles: ['USER'],
+            },
+        ],
+    },
+    // {
+    //     title: 'Medical Records',
+    //     items: [
+    //         {
+    //             title: 'My Prescriptions',
+    //             href: '/dashboard/my-prescriptions',
+    //             icon: 'FileText',
+    //             roles: ['USER'],
+    //         },
+    //         {
+    //             title: 'Health Records',
+    //             href: '/dashboard/health-records',
+    //             icon: 'Activity',
+    //             roles: ['USER'],
+    //         },
+    //     ],
+    // },
+];
+
 export const hostNavItems: NavSection[] = [
     {
         title: 'Host Management',
         items: [
             {
-                title: 'Events',
-                href: '/host/dashboard/events',
-                icon: 'Calendar', // ✅ String
+                title: 'Create Event',
+                href: '/host/events/create',
+                icon: 'Clock',
+                roles: ['HOST'],
+            },
+            {
+                title: 'Hosted events (upcoming/past)',
+                href: '/host/dashboard/hosted-events',
+                icon: 'Calendar',
                 badge: '3',
                 roles: ['HOST'],
             },
             {
-                title: 'Create Event',
-                href: '/host/events/create',
-                icon: 'Clock', // ✅ String
+                title: 'Participants management',
+                href: '/host/dashboard/participants-management',
+                icon: 'Calendar',
+                badge: '',
                 roles: ['HOST'],
             },
-        ],
-    },
-];
-
-export const userNavItems: NavSection[] = [
-    {
-        title: 'Appointments',
-        items: [
             {
-                title: 'My Appointments',
-                href: '/dashboard/my-appointments',
-                icon: 'Calendar', // ✅ String
-                roles: ['USER'],
-            },
-            {
-                title: 'Book Appointment',
-                href: '/consultation',
-                icon: 'ClipboardList', // ✅ String
-                roles: ['USER'],
-            },
-        ],
-    },
-    {
-        title: 'Medical Records',
-        items: [
-            {
-                title: 'My Prescriptions',
-                href: '/dashboard/my-prescriptions',
-                icon: 'FileText', // ✅ String
-                roles: ['USER'],
-            },
-            {
-                title: 'Health Records',
-                href: '/dashboard/health-records',
-                icon: 'Activity', // ✅ String
-                roles: ['USER'],
+                title: 'Revenue tracking',
+                href: '/host/dashboard/revenue-tracking',
+                icon: 'Calendar',
+                badge: '',
+                roles: ['HOST'],
             },
         ],
     },
@@ -99,44 +125,21 @@ export const adminNavItems: NavSection[] = [
         title: 'User Management',
         items: [
             {
-                title: 'Admins',
-                href: '/admin/dashboard/admins-management',
-                icon: 'Shield', // ✅ String
+                title: 'User management',
+                href: '/admin/dashboard/user-management',
+                icon: 'Shield',
                 roles: ['ADMIN'],
             },
             {
-                title: 'HOSTs',
-                href: '/admin/dashboard/HOSTs-management',
-                icon: 'Stethoscope', // ✅ String
+                title: 'Host management ',
+                href: '/admin/dashboard/host-management',
+                icon: 'Stethoscope',
                 roles: ['ADMIN'],
             },
             {
-                title: 'USERs',
-                href: '/admin/dashboard/USERs-management',
-                icon: 'Users', // ✅ String
-                roles: ['ADMIN'],
-            },
-        ],
-    },
-    {
-        title: 'Hospital Management',
-        items: [
-            {
-                title: 'Appointments',
-                href: '/admin/dashboard/appointments-management',
-                icon: 'Calendar', // ✅ String
-                roles: ['ADMIN'],
-            },
-            {
-                title: 'Schedules',
-                href: '/admin/dashboard/schedules-management',
-                icon: 'Clock', // ✅ String
-                roles: ['ADMIN'],
-            },
-            {
-                title: 'Specialities',
-                href: '/admin/dashboard/specialities-management',
-                icon: 'Hospital', // ✅ String
+                title: 'Event Management',
+                href: '/admin/dashboard/event-management',
+                icon: 'Users',
                 roles: ['ADMIN'],
             },
         ],
