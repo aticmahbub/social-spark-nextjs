@@ -3,6 +3,8 @@
 
 import z from 'zod';
 import {loginUser} from './loginUser';
+import {zodValidator} from '@/lib/zodValidator';
+import {serverFetch} from '@/lib/server-fetch';
 
 const registrationValidationZodSchema = z
     .object({
@@ -31,7 +33,7 @@ export const registerUser = async (
     formData: FormData,
 ): Promise<any> => {
     try {
-        const registrationData = {
+        const payload = {
             name: formData.get('name') as string,
             email: formData.get('email') as string,
             password: formData.get('password') as string,
@@ -39,31 +41,28 @@ export const registerUser = async (
             location: formData.get('location'),
         };
 
-        const validatedFields =
-            registrationValidationZodSchema.safeParse(registrationData);
-
-        if (!validatedFields.success) {
-            return {
-                success: false,
-                errors: validatedFields.error.issues.map((issue) => {
-                    return {
-                        field: issue.path[0],
-                        message: issue.message,
-                    };
-                }),
-            };
+        if (
+            zodValidator(payload, registrationValidationZodSchema).success ===
+            false
+        ) {
+            return zodValidator(payload, registrationValidationZodSchema);
         }
 
-        const newFormData = new FormData();
-        newFormData.append('data', JSON.stringify(registrationData));
+        const validatedPayload = zodValidator(
+            payload,
+            registrationValidationZodSchema,
+        ).data;
 
-        const res = await fetch(
-            `http://localhost:4000/api/v1/user/create-user`,
-            {
-                method: 'POST',
-                body: newFormData,
-            },
-        );
+        const newFormData = new FormData();
+        newFormData.append('data', JSON.stringify(validatedPayload));
+
+        if (formData.get('file')) {
+            newFormData.append('file', formData.get('file') as Blob);
+        }
+
+        const res = await serverFetch.post(`/user/create-user`, {
+            body: newFormData,
+        });
         const result = await res.json();
 
         if (result.success) {

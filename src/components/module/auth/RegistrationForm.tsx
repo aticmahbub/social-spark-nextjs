@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import InputFieldError from '@/components/shared/InputFieldError';
 import {Button} from '@/components/ui/button';
 import {
     Field,
@@ -50,11 +51,7 @@ export default function RegistrationForm() {
                             type='text'
                             placeholder='John Doe'
                         />
-                        {getFieldError('name') && (
-                            <FieldDescription className='text-red-600'>
-                                {getFieldError('name')}
-                            </FieldDescription>
-                        )}
+                        <InputFieldError field='name' state={state} />
                     </Field>
                     {/* Location */}
                     <Field>
@@ -65,12 +62,7 @@ export default function RegistrationForm() {
                             type='text'
                             placeholder='123 Main St'
                         />
-
-                        {getFieldError('location') && (
-                            <FieldDescription className='text-red-600'>
-                                {getFieldError('location')}
-                            </FieldDescription>
-                        )}
+                        <InputFieldError field='location' state={state} />
                     </Field>
                     {/* Email */}
                     <Field>
@@ -82,22 +74,14 @@ export default function RegistrationForm() {
                             placeholder='m@example.com'
                         />
 
-                        {getFieldError('email') && (
-                            <FieldDescription className='text-red-600'>
-                                {getFieldError('email')}
-                            </FieldDescription>
-                        )}
+                        <InputFieldError field='email' state={state} />
                     </Field>
                     {/* Password */}
                     <Field>
                         <FieldLabel htmlFor='password'>Password</FieldLabel>
                         <Input id='password' name='password' type='password' />
 
-                        {getFieldError('password') && (
-                            <FieldDescription className='text-red-600'>
-                                {getFieldError('password')}
-                            </FieldDescription>
-                        )}
+                        <InputFieldError field='password' state={state} />
                     </Field>
                     {/* Confirm Password */}
                     <Field className='md:col-span-2'>
@@ -110,11 +94,10 @@ export default function RegistrationForm() {
                             type='password'
                         />
 
-                        {getFieldError('confirmPassword') && (
-                            <FieldDescription className='text-red-600'>
-                                {getFieldError('confirmPassword')}
-                            </FieldDescription>
-                        )}
+                        <InputFieldError
+                            field='confirmPassword'
+                            state={state}
+                        />
                     </Field>
                 </div>
                 <FieldGroup className='mt-4'>
