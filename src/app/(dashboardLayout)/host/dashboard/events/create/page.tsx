@@ -1,5 +1,10 @@
+import CreateEventForm from '@/components/module/Host/event/CreateEventForm';
 import React from 'react';
 
 export default function CreateEventPage() {
-    return <div>CreateEventPage</div>;
+    return (
+        <div>
+            <CreateEventForm />
+        </div>
+    );
 }

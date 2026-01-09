@@ -1,14 +1,13 @@
-// app/host/dashboard/events/page.tsx
-
 import EventManagementHeader from '@/components/module/Host/event/EventManagementHeader';
+import EventTable from '@/components/module/Host/event/EventTable';
 import RefreshButton from '@/components/shared/RefreshButton';
 import {TableSkeleton} from '@/components/shared/TableSkeleton';
-import {Suspense} from 'react';
-import EventTable from '@/components/module/Host/event/EventTable';
 import {hostedEvents} from '@/services/host/eventManagement';
+import React, {Suspense} from 'react';
 
-const HostedEventsPage = async () => {
+export default async function EventManagementPage() {
     const result = await hostedEvents();
+
     return (
         <div>
             {' '}
@@ -23,6 +22,4 @@ const HostedEventsPage = async () => {
             </div>
         </div>
     );
-};
-
-export default HostedEventsPage;
+}
