@@ -6,9 +6,9 @@ import {
     getDefaultDashboardRoute,
     getRouteOwner,
     isAuthRoute,
-    UserRole,
 } from './utils/auth';
 import {deleteCookie} from './services/auth/tokenHandlers';
+import {UserRole} from './types/user.types';
 
 export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;

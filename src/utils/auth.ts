@@ -1,4 +1,4 @@
-export type UserRole = 'USER' | 'HOST' | 'ADMIN';
+import {UserRole} from '@/types/user.types';
 
 export type RouteConfig = {
     exact: string[];
@@ -13,7 +13,7 @@ export const authRoutes = [
 ];
 
 export const commonProtectedRoutes: RouteConfig = {
-    exact: ['/profile', '/settings'],
+    exact: ['/profile', '/settings', 'change-password'],
     patterns: [],
 };
 

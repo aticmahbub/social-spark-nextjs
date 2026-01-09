@@ -1,16 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
-import {
-    getDefaultDashboardRoute,
-    isValidRedirectForRole,
-    UserRole,
-} from '@/utils/auth';
+import {getDefaultDashboardRoute, isValidRedirectForRole} from '@/utils/auth';
 import {parse} from 'cookie';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 
 import {redirect} from 'next/navigation';
 import z from 'zod';
 import {setCookie} from './tokenHandlers';
+import {UserRole} from '@/types/user.types';
 
 const loginValidationZodSchema = z.object({
     email: z.email({
