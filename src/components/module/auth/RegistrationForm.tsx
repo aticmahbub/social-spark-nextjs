@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import InputFieldError from '@/components/shared/InputFieldError';
@@ -16,22 +15,6 @@ import {toast} from 'sonner';
 
 export default function RegistrationForm() {
     const [state, formAction, isPending] = useActionState(registerUser, null);
-    console.log(state, 'state');
-
-    const getFieldError = (fieldName: string) => {
-        if (state && state.errors) {
-            const error = state.errors.find(
-                (err: any) => err.field === fieldName,
-            );
-            if (error) {
-                return error.message;
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
-    };
 
     useEffect(() => {
         if (state && !state.success && state.message) {

@@ -5,25 +5,11 @@ import {parse} from 'cookie';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 
 import {redirect} from 'next/navigation';
-import z from 'zod';
 import {setCookie} from './tokenHandlers';
 import {UserRole} from '@/types/user.types';
 import {zodValidator} from '@/lib/zodValidator';
 import {serverFetch} from '@/lib/server-fetch';
-
-const loginValidationZodSchema = z.object({
-    email: z.email({
-        message: 'Email is required',
-    }),
-    password: z
-        .string('Password is required')
-        .min(6, {
-            error: 'Password is required and must be at least 6 characters long',
-        })
-        .max(100, {
-            error: 'Password must be at most 100 characters long',
-        }),
-});
+import {loginValidationZodSchema} from '@/zod/auth/auth.validation.schema';
 
 export const loginUser = async (
     _currentState: any,
