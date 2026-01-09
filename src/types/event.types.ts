@@ -1,5 +1,3 @@
-// types/event.types.ts
-
 export type EventStatus = 'OPEN' | 'CLOSED' | 'CANCELLED';
 
 export interface Event {
@@ -16,14 +14,23 @@ export interface Event {
 
     image?: string | null;
     joiningFee: number;
-
     status: EventStatus;
 
     hostId: string;
 
     createdAt: string;
     updatedAt: string;
+}
 
-    // derived / backend-added fields
-    participantCount?: number;
+export interface CreateEventPayload {
+    name: string;
+    type: string;
+    description: string;
+    date: string | Date;
+    location: string;
+    minParticipants: number;
+    maxParticipants: number;
+    image?: string | null;
+    joiningFee?: number;
+    status?: EventStatus;
 }
