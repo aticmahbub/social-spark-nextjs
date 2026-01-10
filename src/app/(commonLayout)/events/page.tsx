@@ -1,9 +1,9 @@
-'use client';
+'use server';
 
 import {Suspense} from 'react';
 import AllEventsContent from './module/AllEventsContent';
 
-export default function AllEvents() {
+export default async function AllEvents() {
     return (
         <Suspense
             fallback={
