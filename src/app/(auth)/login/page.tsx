@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Logo from '@/assets/icons/Logo';
 import Image from 'next/image';
 import loginImage from '../../../assets/images/login-image.jpg';
-import LoginForm from '@/components/module/Auth/LoginForm';
+import LoginForm from '@/components/module/auth/LoginForm';
 
 export default async function LoginPage({
     searchParams,
