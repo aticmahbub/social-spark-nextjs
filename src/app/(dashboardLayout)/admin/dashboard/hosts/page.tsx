@@ -1,5 +1,5 @@
-import React from 'react';
+export const dynamic = 'force-dynamic';
 
-export default function HostsPage() {
+export default async function HostsPage() {
     return <div>HostsPage</div>;
 }

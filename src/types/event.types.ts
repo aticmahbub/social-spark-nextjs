@@ -1,4 +1,9 @@
-export type EventStatus = 'OPEN' | 'CLOSED' | 'CANCELLED';
+export enum EventStatus {
+    OPEN = 'OPEN',
+    FULL = 'FULL',
+    CANCELLED = 'CANCELLED',
+    COMPLETED = 'COMPLETED',
+}
 
 export interface Event {
     id: string;

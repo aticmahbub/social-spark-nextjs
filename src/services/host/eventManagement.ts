@@ -9,6 +9,8 @@ import {
     updateEventZodSchema,
 } from '@/zod/event/event.validation.schema';
 
+/* -------------------------------- CREATE -------------------------------- */
+
 export const createEvent = async (_prevState: any, formData: FormData) => {
     try {
         const payload: CreateEventPayload = {
@@ -21,23 +23,18 @@ export const createEvent = async (_prevState: any, formData: FormData) => {
             maxParticipants: Number(formData.get('maxParticipants')),
             joiningFee: Number(formData.get('joiningFee') ?? 0),
             status: formData.get('status') as EventStatus,
-            image: formData.get('image') as string | null,
+            image: null,
         };
 
         const validated = zodValidator(payload, createEventZodSchema);
-        if (!validated.success) {
-            return validated;
-        }
+        if (!validated.success) return validated;
 
         const res = await serverFetch.post('/event', {
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(validated.data),
         });
 
         const result = await res.json();
-        console.log(result);
 
         if (!res.ok) {
             return {
@@ -62,21 +59,19 @@ export const createEvent = async (_prevState: any, formData: FormData) => {
     }
 };
 
+/* -------------------------------- READ -------------------------------- */
+
 export const hostedEvents = async (queryString?: string) => {
     try {
-        const res = await serverFetch.get(`/event/my-events1
-            ${queryString ? `${queryString}` : ''}`);
+        const res = await serverFetch.get(
+            `/event/my-events${queryString ? `?${queryString}` : ''}`,
+        );
 
         const result = await res.json();
 
-        if (!res.ok) {
-            throw new Error(result?.message || 'Failed to load events');
-        }
-        return {
-            success: true,
-            data: result.data,
-        };
+        return result;
     } catch (error: any) {
+        console.log(error);
         return {
             success: false,
             message:
@@ -86,29 +81,28 @@ export const hostedEvents = async (queryString?: string) => {
         };
     }
 };
+
 export const hostedEventsById = async (id: string) => {
     try {
-        const res = await serverFetch.get(`event/${id}`);
-
+        const res = await serverFetch.get(`/event/${id}`);
         const result = await res.json();
 
-        if (!res.ok) {
-            throw new Error(result?.message || 'Failed to load events');
-        }
-        return {
-            success: true,
-            data: result.data,
-        };
+        if (!res.ok) throw new Error(result?.message);
+
+        return result;
     } catch (error: any) {
+        console.log(error);
         return {
             success: false,
             message:
                 process.env.NODE_ENV === 'development'
                     ? error.message
-                    : 'Failed to load events',
+                    : 'Failed to load event',
         };
     }
 };
+
+/* -------------------------------- UPDATE -------------------------------- */
 
 export const updateEvent = async (
     id: string,
@@ -116,49 +110,93 @@ export const updateEvent = async (
     formData: FormData,
 ) => {
     try {
-        const payload = {
+        const payload = new FormData();
+
+        const fields = [
+            'name',
+            'type',
+            'description',
+            'date',
+            'location',
+            'minParticipants',
+            'maxParticipants',
+            'joiningFee',
+            'status',
+        ];
+
+        fields.forEach((field) => {
+            const value = formData.get(field);
+            if (value !== null && value !== undefined) {
+                payload.append(field, value.toString());
+            }
+        });
+
+        const image = formData.get('image') as File;
+        if (image && image.size > 0) {
+            payload.append('image', image);
+        }
+
+        const validationPayload = {
             name: formData.get('name') as string,
             type: formData.get('type') as string,
             description: formData.get('description') as string,
-            date: new Date(formData.get('date') as string),
+            date: formData.get('date') as string,
             location: formData.get('location') as string,
             minParticipants: Number(formData.get('minParticipants')),
             maxParticipants: Number(formData.get('maxParticipants')),
             joiningFee: Number(formData.get('joiningFee')),
-            status: formData.get('status') as 'OPEN' | 'CLOSED',
-            image: formData.get('image') as string | null,
+            status: formData.get('status') as EventStatus,
         };
 
-        const validatedPayload = zodValidator(
-            payload,
-            updateEventZodSchema,
-        ).data;
+        const validated = zodValidator(validationPayload, updateEventZodSchema);
+        if (!validated.success) return validated;
 
-        const response = await serverFetch.patch(`/events/${id}`, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(validatedPayload),
+        const res = await serverFetch.patch(`/my-events/${id}`, {
+            body: payload,
         });
 
-        return await response.json();
+        const result = await res.json();
+
+        if (!res.ok) {
+            return {
+                success: false,
+                message: result?.message || 'Failed to update event',
+                errors: result?.errors || [],
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Event updated successfully',
+            data: result.data,
+            errors: [],
+        };
     } catch (error: any) {
-        console.error(error);
         return {
             success: false,
             message:
                 process.env.NODE_ENV === 'development'
                     ? error.message
                     : 'Something went wrong',
+            errors: [],
         };
     }
 };
 
+/* -------------------------------- DELETE -------------------------------- */
+
 export const deleteEvent = async (id: string) => {
     try {
-        const response = await serverFetch.delete(`/event/${id}`);
+        const res = await serverFetch.delete(`/event/${id}`);
+        const result = await res.json();
 
-        const result = await response.json();
+        if (!res.ok) {
+            return {
+                success: false,
+                message: result?.message || 'Failed to delete event',
+            };
+        }
+
         return result;
     } catch (error: any) {
         console.log(error);

@@ -1,10 +1,4 @@
-import CreateEventForm from '@/components/module/Host/event/CreateEventForm';
-import React from 'react';
-
+export const dynamic = 'force-dynamic';
 export default function CreateEventPage() {
-    return (
-        <div>
-            <CreateEventForm />
-        </div>
-    );
+    return <div>Create event page</div>;
 }
