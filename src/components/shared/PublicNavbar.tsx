@@ -40,6 +40,20 @@ export default async function Navbar() {
                 <NavigationMenu>
                     <NavigationMenuList className='flex items-center gap-6'>
                         {/* PUBLIC */}
+                        {role === 'PUBLIC' && (
+                            <>
+                                <NavLink href='/events'>Explore Events</NavLink>
+                                <NavLink href='/registration?role=host'>
+                                    Become a Host
+                                </NavLink>
+                                <NavLink href='/login'>Login</NavLink>
+                                <Button asChild>
+                                    <Link href='/registration'>
+                                        Registration
+                                    </Link>
+                                </Button>
+                            </>
+                        )}
                         {accessToken && (
                             <>
                                 <NavLink href='/events'>Explore Events</NavLink>

@@ -9,8 +9,6 @@ import {
     updateEventZodSchema,
 } from '@/zod/event/event.validation.schema';
 
-/* -------------------------------- CREATE -------------------------------- */
-
 export const createEvent = async (_prevState: any, formData: FormData) => {
     try {
         const payload: CreateEventPayload = {
@@ -59,8 +57,6 @@ export const createEvent = async (_prevState: any, formData: FormData) => {
     }
 };
 
-/* -------------------------------- READ -------------------------------- */
-
 export const hostedEvents = async (queryString?: string) => {
     try {
         const res = await serverFetch.get(
@@ -101,8 +97,6 @@ export const hostedEventsById = async (id: string) => {
         };
     }
 };
-
-/* -------------------------------- UPDATE -------------------------------- */
 
 export const updateEvent = async (
     id: string,
@@ -182,8 +176,6 @@ export const updateEvent = async (
         };
     }
 };
-
-/* -------------------------------- DELETE -------------------------------- */
 
 export const deleteEvent = async (id: string) => {
     try {
