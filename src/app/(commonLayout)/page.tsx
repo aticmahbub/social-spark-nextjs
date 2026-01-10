@@ -1,3 +1,4 @@
+import BodySection from '@/components/module/Home/BodySection';
 import HeroSection from '@/components/module/Home/HeroSection';
 import Head from 'next/head';
 
@@ -14,6 +15,7 @@ export default function Home() {
             <main className='flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black'>
                 <HeroSection />
             </main>
+            <BodySection />
         </>
     );
 }

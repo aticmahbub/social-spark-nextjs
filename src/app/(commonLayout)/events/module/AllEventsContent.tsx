@@ -90,7 +90,7 @@ export default function AllEventsContent() {
             const queryString = buildQueryString();
             // Using the serverFetch pattern from your code
             const response = await fetch(
-                `https://social-spark-prisma-postgres.onrender.com/api/v1/event?${queryString}`,
+                `${process.env.NEXT_PUBLIC_BASE_API_URL}/event?${queryString}`,
                 {
                     credentials: 'include', // For cookies
                 },
