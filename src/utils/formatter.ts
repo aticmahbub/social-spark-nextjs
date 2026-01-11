@@ -1,3 +1,5 @@
+import {format} from 'date-fns';
+
 export function getInitials(name: string): string {
     return name
         .split(' ')
@@ -39,3 +41,12 @@ export function queryStringFormatter(searchParamsObj: {
     queryString = queryArray.filter((q) => q !== '').join('&'); // searchTerm=John&speciality=Cardiology&speciality=Neurology
     return queryString;
 }
+
+export const formatDate = (dateString?: string | null) => {
+    if (!dateString) return 'Unknown date';
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Unknown date';
+
+    return format(date, 'MMMM dd, yyyy');
+};

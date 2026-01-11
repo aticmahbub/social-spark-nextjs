@@ -1,37 +1,34 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {
     NavigationMenu,
-    NavigationMenuItem,
-    NavigationMenuLink,
     NavigationMenuList,
 } from '@/components/ui/navigation-menu';
-import {cn} from '@/lib/utils';
-import {Button} from '@/components/ui/button';
 import siteIcon from '../../assets/icons/site-icon.png';
-import Image from 'next/image';
-import {getCookie} from '@/services/auth/tokenHandlers';
-import LogoutButton from './LogoutButton';
-
-/** TEMP: replace with real auth */
-
-const role: 'PUBLIC' | 'USER' | 'HOST' | 'ADMIN' = 'PUBLIC';
+import PublicNav from '../module/nav/PublicNav';
+import UserNav from '../module/nav/UserNav';
+import HostNav from '../module/nav/HostNav';
+import AdminNav from '../module/nav/AdminNav';
+import {getUserFromToken} from '@/utils/getUserFromToken';
+import {UserRole} from '@/types/user.types';
 
 export default async function Navbar() {
-    const accessToken = await getCookie('accessToken');
-    const isLoggedIn = accessToken ? true : false;
+    const user = await getUserFromToken();
+    const userRole: UserRole | undefined = user?.role;
 
     return (
         <header className='border-b bg-background'>
             <div className='container mx-auto flex h-16 items-center justify-between px-4'>
+                {/* Logo */}
                 <Link
                     href='/'
-                    className='text-xl font-bold flex items-center gap-2'
+                    className='flex items-center gap-2 text-xl font-bold'
                 >
                     <Image
-                        height={40}
-                        width={40}
                         src={siteIcon}
                         alt='Social Spark Logo'
+                        width={40}
+                        height={40}
                     />
                     Social<span className='text-primary'>Spark</span>
                 </Link>
@@ -39,100 +36,13 @@ export default async function Navbar() {
                 {/* Navigation */}
                 <NavigationMenu>
                     <NavigationMenuList className='flex items-center gap-6'>
-                        {/* PUBLIC */}
-                        {role === 'PUBLIC' && (
-                            <>
-                                <NavLink href='/events'>Explore Events</NavLink>
-                                <NavLink href='/registration?role=host'>
-                                    Become a Host
-                                </NavLink>
-                                <NavLink href='/login'>Login</NavLink>
-                                <Button asChild>
-                                    <Link href='/registration'>
-                                        Registration
-                                    </Link>
-                                </Button>
-                            </>
-                        )}
-                        {accessToken && (
-                            <>
-                                <NavLink href='/events'>Explore Events</NavLink>
-                                <NavLink href='/registration?role=host'>
-                                    Become a Host
-                                </NavLink>
-                                <NavLink href='/login'>Login</NavLink>
-                                <Button asChild>
-                                    <Link href='/registration'>
-                                        Registration
-                                    </Link>
-                                </Button>
-                            </>
-                        )}
-
-                        {/* USER */}
-                        {accessToken && (
-                            <>
-                                <NavLink href='/events'>Explore Events</NavLink>
-                                <NavLink href='/my-events'>My Events</NavLink>
-                                <NavLink href='/profile/me'>Profile</NavLink>
-                                <LogoutButton />
-                            </>
-                        )}
-
-                        {/* HOST */}
-                        {role === 'HOST' && (
-                            <>
-                                <NavLink href='/events'>Explore Events</NavLink>
-                                <NavLink href='/host/events'>My Events</NavLink>
-                                <NavLink href='/events/create'>
-                                    Create Event
-                                </NavLink>
-                                <NavLink href='/profile/me'>Profile</NavLink>
-                                <NavLink href='/logout'>Logout</NavLink>
-                            </>
-                        )}
-
-                        {/* ADMIN */}
-                        {role === 'ADMIN' && (
-                            <>
-                                <NavLink href='/admin/dashboard'>
-                                    Admin Dashboard
-                                </NavLink>
-                                <NavLink href='/admin/users'>
-                                    Manage Users
-                                </NavLink>
-                                <NavLink href='/admin/hosts'>
-                                    Manage Hosts
-                                </NavLink>
-                                <NavLink href='/admin/events'>
-                                    Manage Events
-                                </NavLink>
-                                <NavLink href='/profile/me'>Profile</NavLink>
-                                <NavLink href='/logout'>Logout</NavLink>
-                            </>
-                        )}
+                        {userRole === 'PUBLIC' && <PublicNav />}
+                        {userRole === 'USER' && <UserNav />}
+                        {userRole === 'HOST' && <HostNav />}
+                        {userRole === 'ADMIN' && <AdminNav />}
                     </NavigationMenuList>
                 </NavigationMenu>
             </div>
         </header>
-    );
-}
-
-/* ---------- Reusable Link ---------- */
-
-function NavLink({href, children}: {href: string; children: React.ReactNode}) {
-    return (
-        <NavigationMenuItem>
-            <NavigationMenuLink asChild>
-                <Link
-                    href={href}
-                    className={cn(
-                        'text-sm font-medium text-muted-foreground hover:text-primary transition',
-                    )}
-                >
-                    {children}
-                </Link>
-            </NavigationMenuLink>
-        </NavigationMenuItem>
     );
 }

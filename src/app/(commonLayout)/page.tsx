@@ -1,5 +1,6 @@
 import BodySection from '@/components/module/Home/BodySection';
 import HeroSection from '@/components/module/Home/HeroSection';
+import PublicFooter from '@/components/shared/PublicFooter';
 import Head from 'next/head';
 
 export default function Home() {
@@ -16,6 +17,7 @@ export default function Home() {
                 <HeroSection />
             </main>
             <BodySection />
+            <PublicFooter />
         </>
     );
 }

@@ -6,6 +6,7 @@ import {Badge} from '@/components/ui/badge';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Separator} from '@/components/ui/separator';
 import {Star, MapPin, Users, Calendar, Sparkles} from 'lucide-react';
+import RecentEvents from '../events/RecentEvents';
 
 export default function BodySection() {
     return (
@@ -78,30 +79,7 @@ export default function BodySection() {
 
             {/* 3. Upcoming Events Near You */}
             <section className='container mx-auto py-24'>
-                <div className='mb-8 flex items-center justify-between'>
-                    <h2 className='text-3xl font-bold'>Upcoming Near You</h2>
-                    <Button variant='ghost'>View all</Button>
-                </div>
-                <div className='grid gap-6 md:grid-cols-3'>
-                    {[1, 2, 3].map((i) => (
-                        <Card key={i}>
-                            <CardHeader>
-                                <CardTitle>Weekend Hiking</CardTitle>
-                            </CardHeader>
-                            <CardContent className='space-y-3 text-sm text-muted-foreground'>
-                                <div className='flex items-center gap-2'>
-                                    <MapPin size={16} /> Dhaka
-                                </div>
-                                <div className='flex items-center gap-2'>
-                                    <Calendar size={16} /> This Saturday
-                                </div>
-                                <div className='flex items-center gap-2'>
-                                    <Users size={16} /> 12 participants
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                <RecentEvents />
             </section>
 
             {/* 4. Popular Categories */}

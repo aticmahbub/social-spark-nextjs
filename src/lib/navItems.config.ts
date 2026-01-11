@@ -14,25 +14,25 @@ export const getCommonNavItems = (role: UserRole): NavSection[] => {
                     icon: 'LayoutDashboard',
                     roles: ['USER', 'HOST', 'ADMIN'],
                 },
-                {
-                    title: 'My Profile',
-                    href: `/profile/user`,
-                    icon: 'User',
-                    roles: ['USER', 'HOST', 'ADMIN'],
-                },
+                // {
+                //     title: 'My Profile',
+                //     href: `/profile/user`,
+                //     icon: 'User',
+                //     roles: ['USER', 'HOST', 'ADMIN'],
+                // },
             ],
         },
-        {
-            title: 'Settings',
-            items: [
-                {
-                    title: 'Change Password',
-                    href: '/change-password',
-                    icon: 'Settings',
-                    roles: ['USER'],
-                },
-            ],
-        },
+        // {
+        //     title: 'Settings',
+        //     items: [
+        //         {
+        //             title: 'Change Password',
+        //             href: '/change-password',
+        //             icon: 'Settings',
+        //             roles: ['USER'],
+        //         },
+        //     ],
+        // },
     ];
 };
 
@@ -49,18 +49,6 @@ export const userNavItems: NavSection[] = [
             {
                 title: 'Explore events',
                 href: '/events',
-                icon: 'ClipboardList',
-                roles: ['USER'],
-            },
-            {
-                title: 'Saved events',
-                href: '/user/dashboard/saved-events',
-                icon: 'ClipboardList',
-                roles: ['USER'],
-            },
-            {
-                title: 'Past events',
-                href: '/user/dashboard/past-events',
                 icon: 'ClipboardList',
                 roles: ['USER'],
             },
@@ -89,12 +77,12 @@ export const hostNavItems: NavSection[] = [
     {
         title: 'Host Management',
         items: [
-            {
-                title: 'Create Event',
-                href: '/host/dashboard/events/create',
-                icon: 'Clock',
-                roles: ['HOST'],
-            },
+            // {
+            //     title: 'Create Event',
+            //     href: '/host/dashboard/events/create',
+            //     icon: 'Clock',
+            //     roles: ['HOST'],
+            // },
             {
                 title: 'Manage events',
                 href: '/host/dashboard/hosted-events',
@@ -102,20 +90,20 @@ export const hostNavItems: NavSection[] = [
                 badge: '3',
                 roles: ['HOST'],
             },
-            {
-                title: 'Participants management',
-                href: '/host/dashboard/participants-management',
-                icon: 'Calendar',
-                badge: '',
-                roles: ['HOST'],
-            },
-            {
-                title: 'Revenue tracking',
-                href: '/host/dashboard/revenue-tracking',
-                icon: 'Calendar',
-                badge: '',
-                roles: ['HOST'],
-            },
+            // {
+            //     title: 'Participants management',
+            //     href: '/host/dashboard/participants-management',
+            //     icon: 'Calendar',
+            //     badge: '',
+            //     roles: ['HOST'],
+            // },
+            // {
+            //     title: 'Revenue tracking',
+            //     href: '/host/dashboard/revenue-tracking',
+            //     icon: 'Calendar',
+            //     badge: '',
+            //     roles: ['HOST'],
+            // },
         ],
     },
 ];

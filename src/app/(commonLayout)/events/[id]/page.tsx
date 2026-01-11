@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import {useState, useEffect} from 'react';
@@ -31,33 +32,16 @@ interface Event {
     joiningFee: number;
     status: string;
     image?: string;
-    host?: {
-        id: string;
-        name: string;
-        email: string;
-        phone?: string;
-    };
-    hostId: string; // Add this field
-    _count: {
-        participants: number;
-    };
+    hostId: string;
+    host?: {id: string; name: string; email: string; phone?: string};
+    _count: {participants: number};
     participants: Array<{
         id: string;
-        user: {
-            id: string;
-            name: string;
-            email: string;
-            phone?: string;
-        };
-        status: string;
-        joinedAt: string;
+        userId: string;
+        status?: string;
+        joinedAt?: string;
+        user?: {id: string; name: string; email: string; phone?: string};
     }>;
-}
-
-interface EventResponse {
-    success: boolean;
-    message: string;
-    data: Event;
 }
 
 export default function EventDetails() {
@@ -69,42 +53,56 @@ export default function EventDetails() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [joining, setJoining] = useState(false);
-    const [leaving, setLeaving] = useState(false);
     const [isParticipant, setIsParticipant] = useState(false);
     const [isOrganizer, setIsOrganizer] = useState(false);
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const [userLoading, setUserLoading] = useState(true);
 
+    // KEY FIX 1: Fetch user first, then event
     useEffect(() => {
         fetchCurrentUser();
     }, []);
 
     useEffect(() => {
-        if (eventId) {
+        if (eventId && !userLoading) {
             fetchEventDetails();
         }
-    }, [eventId]);
+    }, [eventId, userLoading]);
 
+    // KEY FIX 2: Check participation after both user and event are loaded
     useEffect(() => {
-        if (event && currentUser) {
+        if (event && !userLoading) {
             checkParticipation();
         }
-    }, [event, currentUser]);
+    }, [event, currentUser, userLoading]);
 
     const fetchCurrentUser = async () => {
         try {
+            setUserLoading(true);
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_BASE_API_URL}/auth/me`,
                 {
+                    method: 'GET',
                     credentials: 'include',
+                    headers: {'Content-Type': 'application/json'},
                 },
             );
 
+            console.log('👤 User fetch status:', response.status);
+
             if (response.ok) {
                 const userData = await response.json();
-                setCurrentUser(userData.data);
+                console.log('✅ User data:', userData);
+                setCurrentUser(userData.data || userData);
+            } else {
+                console.log('⚠️ User not logged in');
+                setCurrentUser(null);
             }
         } catch (error) {
-            console.log('Not logged in or error fetching user');
+            console.error('❌ Error fetching user:', error);
+            setCurrentUser(null);
+        } finally {
+            setUserLoading(false);
         }
     };
 
@@ -113,60 +111,70 @@ export default function EventDetails() {
             setLoading(true);
             setError(null);
 
-            // Use the correct endpoint from your routes: GET /api/event/:id
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_BASE_API_URL}/event/${eventId}`,
-                {
-                    credentials: 'include',
-                },
-            );
+            const url = `${process.env.NEXT_PUBLIC_BASE_API_URL}/event/${eventId}`;
+            console.log('🎫 Fetching event from:', url);
 
-            console.log(
-                'Fetching event from:',
-                `${process.env.NEXT_PUBLIC_BASE_API_URL}/event/${eventId}`,
-            );
-            console.log('Response status:', response.status);
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {'Content-Type': 'application/json'},
+                cache: 'no-store',
+            });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('Error response:', errorText);
-                throw new Error(`HTTP error! status: ${response.status}`);
+                console.error('❌ Error response:', errorText);
+                throw new Error(`Failed to fetch event (${response.status})`);
             }
 
-            const result: EventResponse = await response.json();
-            console.log('Event response:', result);
+            const result = await response.json();
 
-            if (!result.success) {
-                throw new Error(
-                    result.message || 'Failed to fetch event details',
-                );
+            // KEY FIX 3: Handle nested response structure
+            // Your API returns: {statusCode, success, message, data: {event: {...}}}
+            // eslint-disable-next-line prefer-const
+            let eventData: any =
+                result.data?.event || result.data || result.event || result;
+
+            if (!eventData) {
+                throw new Error('No event data in response');
             }
 
-            setEvent(result.data);
+            setEvent(eventData);
         } catch (err: any) {
-            console.error('Error fetching event details:', err);
-            setError(err.message || 'Something went wrong');
+            console.error('❌ Error fetching event:', err);
+            setError(err.message || 'Failed to load event details');
         } finally {
             setLoading(false);
         }
     };
 
     const checkParticipation = () => {
-        if (!event || !currentUser) return;
-
-        // Check if current user is the organizer (host)
-        if (currentUser.id === event.hostId) {
-            setIsOrganizer(true);
+        if (!event) {
+            return;
         }
 
-        // Check if current user is a participant
-        const isUserParticipant = event.participants?.some(
-            (p) => p.user?.id === currentUser.id,
-        );
-        setIsParticipant(isUserParticipant || false);
+        // Check if organizer
+        const userIsOrganizer = currentUser && currentUser.id === event.hostId;
+        setIsOrganizer(userIsOrganizer || false);
+
+        // Check if participant - works with backend that only returns userId
+        const userIsParticipant =
+            currentUser &&
+            event.participants?.some(
+                (p) =>
+                    p.userId === currentUser.id ||
+                    p.user?.id === currentUser.id,
+            );
+        setIsParticipant(userIsParticipant || false);
     };
 
     const handleJoinEvent = async () => {
+        if (!currentUser) {
+            setError('Please sign in to join this event');
+            router.push('/login');
+            return;
+        }
+
         try {
             setJoining(true);
             setError(null);
@@ -176,78 +184,80 @@ export default function EventDetails() {
                 {
                     method: 'POST',
                     credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({eventId}),
                 },
             );
 
             const result = await response.json();
-            console.log('Join response:', result);
 
             if (!response.ok || !result.success) {
                 throw new Error(result.message || 'Failed to join event');
             }
 
-            setIsParticipant(true);
-            await fetchEventDetails(); // Refresh event details
+            await fetchEventDetails();
         } catch (err: any) {
-            console.error('Error joining event:', err);
+            console.error('❌ Error joining:', err);
             setError(err.message || 'Failed to join event');
         } finally {
             setJoining(false);
         }
     };
 
-    const handleDeleteEvent = async () => {
-        if (
-            !confirm(
-                'Are you sure you want to delete this event? This action cannot be undone.',
-            )
-        ) {
-            return;
-        }
+    const handleLeaveEvent = async () => {
+        if (!confirm('Are you sure you want to leave this event?')) return;
 
         try {
-            // Note: Your delete endpoint is DELETE /api/event/:id
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_BASE_API_URL}/event/${eventId}`,
+                `${process.env.NEXT_PUBLIC_BASE_API_URL}/event/leave`,
                 {
-                    method: 'DELETE',
+                    method: 'POST',
                     credentials: 'include',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({eventId}),
                 },
             );
 
             const result = await response.json();
+            if (!response.ok) throw new Error(result.message);
 
-            if (!response.ok || !result.success) {
-                throw new Error(result.message || 'Failed to delete event');
-            }
+            await fetchEventDetails();
+        } catch (err: any) {
+            setError(err.message || 'Failed to leave event');
+        }
+    };
+
+    const handleDeleteEvent = async () => {
+        if (!confirm('Delete this event? This cannot be undone.')) return;
+
+        try {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_BASE_API_URL}/event/${eventId}`,
+                {method: 'DELETE', credentials: 'include'},
+            );
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message);
 
             router.push('/events');
-            router.refresh();
         } catch (err: any) {
-            console.error('Error deleting event:', err);
             setError(err.message || 'Failed to delete event');
         }
     };
 
     const handleShareEvent = () => {
         if (navigator.share) {
-            navigator.share({
-                title: event?.name || 'Event',
-                text: `Check out this event: ${event?.name}`,
-                url: window.location.href,
-            });
+            navigator
+                .share({
+                    title: event?.name,
+                    text: `Check out: ${event?.name}`,
+                    url: window.location.href,
+                })
+                .catch(console.log);
         } else {
             navigator.clipboard.writeText(window.location.href);
-            alert('Event link copied to clipboard!');
+            alert('Link copied!');
         }
-    };
-
-    const handleEditEvent = () => {
-        router.push(`/events/${eventId}/edit`);
     };
 
     const formatDateTime = (dateString: string) => {
@@ -256,75 +266,58 @@ export default function EventDetails() {
             return {
                 date: format(date, 'MMMM dd, yyyy'),
                 time: format(date, 'hh:mm a'),
-                full: format(date, 'MMMM dd, yyyy hh:mm a'),
             };
         } catch {
-            return {date: 'Invalid date', time: '', full: 'Invalid date'};
+            return {date: 'Invalid date', time: ''};
         }
     };
 
     const getStatusColor = (status?: string) => {
-        switch (status) {
-            case 'OPEN':
-                return 'bg-green-100 text-green-800';
-            case 'CLOSED':
-                return 'bg-red-100 text-red-800';
-            case 'CANCELLED':
-                return 'bg-gray-100 text-gray-800';
-            case 'COMPLETED':
-                return 'bg-blue-100 text-blue-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
+        const colors: Record<string, string> = {
+            OPEN: 'bg-green-100 text-green-800',
+            CLOSED: 'bg-red-100 text-red-800',
+            CANCELLED: 'bg-gray-100 text-gray-800',
+            COMPLETED: 'bg-blue-100 text-blue-800',
+        };
+        return colors[status || ''] || 'bg-gray-100 text-gray-800';
     };
 
     const getEventTypeColor = (type?: string) => {
-        switch (type) {
-            case 'MEETUP':
-                return 'bg-purple-100 text-purple-800';
-            case 'WORKSHOP':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'CONFERENCE':
-                return 'bg-indigo-100 text-indigo-800';
-            case 'SOCIAL':
-                return 'bg-pink-100 text-pink-800';
-            case 'SPORTS':
-                return 'bg-teal-100 text-teal-800';
-            case 'MUSIC':
-                return 'bg-orange-100 text-orange-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
+        const colors: Record<string, string> = {
+            MEETUP: 'bg-purple-100 text-purple-800',
+            WORKSHOP: 'bg-yellow-100 text-yellow-800',
+            CONFERENCE: 'bg-indigo-100 text-indigo-800',
+            SOCIAL: 'bg-pink-100 text-pink-800',
+            SPORTS: 'bg-teal-100 text-teal-800',
+            MUSIC: 'bg-orange-100 text-orange-800',
+        };
+        return colors[type?.toUpperCase() || ''] || 'bg-gray-100 text-gray-800';
     };
 
-    const formatEventType = (type?: string) => {
-        if (!type) return 'Unknown Type';
-        return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-    };
-
-    if (loading) {
+    // Loading state
+    if (loading || userLoading) {
         return (
             <div className='container mx-auto px-4 py-8'>
-                <div className='flex justify-center items-center h-64'>
-                    <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+                <div className='flex flex-col items-center justify-center h-64'>
+                    <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4'></div>
+                    <p className='text-gray-600'>Loading event...</p>
                 </div>
             </div>
         );
     }
 
+    // Error state
     if (error && !event) {
         return (
             <div className='container mx-auto px-4 py-8'>
-                <div className='bg-red-50 border-l-4 border-red-500 p-4'>
-                    <div className='flex'>
-                        <div className='flex-shrink-0'>
-                            <XCircle className='h-5 w-5 text-red-400' />
-                        </div>
+                <div className='bg-red-50 border-l-4 border-red-500 p-4 rounded'>
+                    <div className='flex items-start'>
+                        <XCircle className='h-5 w-5 text-red-400 mt-0.5' />
                         <div className='ml-3'>
-                            <p className='text-sm text-red-700'>{error}</p>
-                            <p className='text-xs text-red-600 mt-1'>
-                                Please check if the event exists and try again.
-                            </p>
+                            <h3 className='font-medium text-red-800'>
+                                Error Loading Event
+                            </h3>
+                            <p className='text-sm text-red-700 mt-1'>{error}</p>
                         </div>
                     </div>
                     <button
@@ -339,20 +332,18 @@ export default function EventDetails() {
         );
     }
 
+    // Not found state
     if (!event) {
         return (
             <div className='container mx-auto px-4 py-8 text-center'>
                 <CalendarDays className='w-16 h-16 text-gray-400 mx-auto mb-4' />
-                <h2 className='text-xl font-semibold text-gray-900 mb-2'>
-                    Event not found
-                </h2>
+                <h2 className='text-xl font-semibold mb-2'>Event not found</h2>
                 <p className='text-gray-600 mb-6'>
-                    The event you are looking for does not exist or has been
-                    removed.
+                    This event may have been removed.
                 </p>
                 <button
                     onClick={() => router.push('/events')}
-                    className='px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium'
+                    className='px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
                 >
                     Browse Events
                 </button>
@@ -361,28 +352,33 @@ export default function EventDetails() {
     }
 
     const dateTime = formatDateTime(event.date);
-    const isFull = event._count?.participants >= event.maxParticipants;
+    const isFull = (event._count?.participants || 0) >= event.maxParticipants;
     const canJoin =
-        event.status === 'OPEN' && !isFull && !isParticipant && !isOrganizer;
-    const organizerName = event.host?.name || 'Unknown Organizer';
+        event.status === 'OPEN' &&
+        !isFull &&
+        !isParticipant &&
+        !isOrganizer &&
+        currentUser;
 
     return (
         <div className='container mx-auto px-4 py-8'>
-            {/* Error message display */}
+            {/* Error Alert */}
             {error && (
-                <div className='mb-6 bg-red-50 border-l-4 border-red-500 p-4'>
-                    <div className='flex'>
-                        <div className='flex-shrink-0'>
-                            <XCircle className='h-5 w-5 text-red-400' />
-                        </div>
-                        <div className='ml-3'>
-                            <p className='text-sm text-red-700'>{error}</p>
-                        </div>
+                <div className='mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded flex items-start justify-between'>
+                    <div className='flex items-start'>
+                        <XCircle className='h-5 w-5 text-red-400 mt-0.5' />
+                        <p className='ml-3 text-sm text-red-700'>{error}</p>
                     </div>
+                    <button
+                        onClick={() => setError(null)}
+                        className='text-red-400 hover:text-red-600'
+                    >
+                        ×
+                    </button>
                 </div>
             )}
 
-            {/* Header with back button and actions */}
+            {/* Header */}
             <div className='mb-6'>
                 <button
                     onClick={() => router.push('/events')}
@@ -394,46 +390,45 @@ export default function EventDetails() {
 
                 <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
                     <div>
-                        <div className='flex items-center gap-3 mb-2'>
-                            <h1 className='text-3xl font-bold text-gray-900'>
-                                {event.name || 'Untitled Event'}
-                            </h1>
+                        <div className='flex items-center gap-3 mb-2 flex-wrap'>
+                            <h1 className='text-3xl font-bold'>{event.name}</h1>
                             <span
                                 className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
                                     event.status,
                                 )}`}
                             >
-                                {event.status || 'UNKNOWN'}
+                                {event.status}
                             </span>
                         </div>
                         <p className='text-gray-600'>
-                            Hosted by {organizerName}
+                            Hosted by {event.host?.name || 'Unknown'}
                         </p>
                     </div>
 
-                    <div className='flex gap-3'>
+                    <div className='flex gap-3 flex-wrap'>
                         {isOrganizer && (
                             <>
                                 <button
-                                    onClick={handleEditEvent}
-                                    className='px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors font-medium flex items-center gap-2'
+                                    onClick={() =>
+                                        router.push(`/events/${eventId}/edit`)
+                                    }
+                                    className='px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 flex items-center gap-2'
                                 >
                                     <Edit className='w-4 h-4' />
                                     Edit
                                 </button>
                                 <button
                                     onClick={handleDeleteEvent}
-                                    className='px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors font-medium flex items-center gap-2'
+                                    className='px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center gap-2'
                                 >
                                     <Trash2 className='w-4 h-4' />
                                     Delete
                                 </button>
                             </>
                         )}
-
                         <button
                             onClick={handleShareEvent}
-                            className='px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium flex items-center gap-2'
+                            className='px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center gap-2'
                         >
                             <Share2 className='w-4 h-4' />
                             Share
@@ -444,18 +439,15 @@ export default function EventDetails() {
 
             {/* Main Content */}
             <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-                {/* Left Column - Event Details */}
-                <div className='lg:col-span-2'>
-                    {/* Event Image */}
-                    <div className='bg-gradient-to-r from-blue-500 to-purple-600 h-64 md:h-80 rounded-xl mb-8 overflow-hidden'>
+                {/* Left: Event Details */}
+                <div className='lg:col-span-2 space-y-8'>
+                    {/* Image */}
+                    <div className='bg-gradient-to-r from-blue-500 to-purple-600 h-64 md:h-80 rounded-xl overflow-hidden'>
                         {event.image ? (
                             <img
                                 src={event.image}
-                                alt={event.name || 'Event'}
+                                alt={event.name}
                                 className='w-full h-full object-cover'
-                                onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                }}
                             />
                         ) : (
                             <div className='w-full h-full flex items-center justify-center'>
@@ -464,39 +456,35 @@ export default function EventDetails() {
                         )}
                     </div>
 
-                    {/* Event Type */}
-                    <div className='mb-6'>
-                        <span
-                            className={`px-4 py-2 rounded-lg text-sm font-medium ${getEventTypeColor(
-                                event.type,
-                            )}`}
-                        >
-                            {formatEventType(event.type)}
-                        </span>
-                    </div>
+                    {/* Type Badge */}
+                    <span
+                        className={`inline-block px-4 py-2 rounded-lg text-sm font-medium ${getEventTypeColor(
+                            event.type,
+                        )}`}
+                    >
+                        {event.type?.charAt(0).toUpperCase() +
+                            event.type?.slice(1).toLowerCase() || 'Event'}
+                    </span>
 
-                    {/* Event Description */}
-                    <div className='mb-8'>
-                        <h2 className='text-xl font-semibold text-gray-900 mb-4'>
+                    {/* Description */}
+                    <div>
+                        <h2 className='text-xl font-semibold mb-4'>
                             Description
                         </h2>
-                        <div className='prose max-w-none'>
-                            <p className='text-gray-700 whitespace-pre-line'>
-                                {event.description ||
-                                    'No description provided.'}
-                            </p>
-                        </div>
+                        <p className='text-gray-700 whitespace-pre-line'>
+                            {event.description || 'No description provided.'}
+                        </p>
                     </div>
 
-                    {/* Event Details Grid */}
-                    <div className='bg-gray-50 rounded-xl p-6 mb-8'>
-                        <h3 className='text-lg font-semibold text-gray-900 mb-4'>
+                    {/* Details Grid */}
+                    <div className='bg-gray-50 rounded-xl p-6'>
+                        <h3 className='text-lg font-semibold mb-4'>
                             Event Details
                         </h3>
                         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                             <div className='space-y-4'>
                                 <div className='flex items-center gap-3'>
-                                    <Calendar className='w-5 h-5 text-gray-500 flex-shrink-0' />
+                                    <Calendar className='w-5 h-5 text-gray-500' />
                                     <div>
                                         <p className='text-sm text-gray-600'>
                                             Date
@@ -506,9 +494,8 @@ export default function EventDetails() {
                                         </p>
                                     </div>
                                 </div>
-
                                 <div className='flex items-center gap-3'>
-                                    <Clock className='w-5 h-5 text-gray-500 flex-shrink-0' />
+                                    <Clock className='w-5 h-5 text-gray-500' />
                                     <div>
                                         <p className='text-sm text-gray-600'>
                                             Time
@@ -518,73 +505,48 @@ export default function EventDetails() {
                                         </p>
                                     </div>
                                 </div>
-
                                 <div className='flex items-center gap-3'>
-                                    <MapPin className='w-5 h-5 text-gray-500 flex-shrink-0' />
+                                    <MapPin className='w-5 h-5 text-gray-500' />
                                     <div>
                                         <p className='text-sm text-gray-600'>
                                             Location
                                         </p>
                                         <p className='font-medium'>
-                                            {event.location ||
-                                                'Location not specified'}
+                                            {event.location}
                                         </p>
                                     </div>
                                 </div>
                             </div>
-
                             <div className='space-y-4'>
                                 <div className='flex items-center gap-3'>
-                                    <Users className='w-5 h-5 text-gray-500 flex-shrink-0' />
+                                    <Users className='w-5 h-5 text-gray-500' />
                                     <div>
                                         <p className='text-sm text-gray-600'>
                                             Participants
                                         </p>
                                         <p className='font-medium'>
                                             {event._count?.participants || 0} /{' '}
-                                            {event.maxParticipants || 0}
+                                            {event.maxParticipants}
                                             {isFull && (
-                                                <span className='ml-2 text-red-600 font-medium'>
+                                                <span className='ml-2 text-red-600'>
                                                     (Full)
                                                 </span>
                                             )}
                                         </p>
-                                        <p className='text-xs text-gray-500'>
-                                            Minimum:{' '}
-                                            {event.minParticipants || 0}
-                                        </p>
                                     </div>
                                 </div>
-
-                                {(event.joiningFee || 0) > 0 && (
-                                    <div className='flex items-center gap-3'>
-                                        <DollarSign className='w-5 h-5 text-gray-500 flex-shrink-0' />
-                                        <div>
-                                            <p className='text-sm text-gray-600'>
-                                                Joining Fee
-                                            </p>
-                                            <p className='font-medium'>
-                                                $
-                                                {(
-                                                    event.joiningFee || 0
-                                                ).toFixed(2)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-
                                 <div className='flex items-center gap-3'>
-                                    <CalendarDays className='w-5 h-5 text-gray-500 flex-shrink-0' />
+                                    <DollarSign className='w-5 h-5 text-gray-500' />
                                     <div>
                                         <p className='text-sm text-gray-600'>
-                                            Status
+                                            Fee
                                         </p>
-                                        <p
-                                            className={`font-medium px-2 py-1 rounded inline-block ${getStatusColor(
-                                                event.status,
-                                            )}`}
-                                        >
-                                            {event.status || 'UNKNOWN'}
+                                        <p className='font-medium'>
+                                            {event.joiningFee > 0
+                                                ? `$${event.joiningFee.toFixed(
+                                                      2,
+                                                  )}`
+                                                : 'Free'}
                                         </p>
                                     </div>
                                 </div>
@@ -592,8 +554,8 @@ export default function EventDetails() {
                         </div>
                     </div>
 
-                    {/* Join/Leave Button */}
-                    <div className='mb-8'>
+                    {/* Action Button */}
+                    <div>
                         {isOrganizer ? (
                             <div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
                                 <p className='text-blue-800 font-medium'>
@@ -601,66 +563,73 @@ export default function EventDetails() {
                                 </p>
                             </div>
                         ) : isParticipant ? (
-                            <div className='space-y-4'>
-                                <div className='bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between'>
-                                    <div className='flex items-center gap-3'>
-                                        <CheckCircle className='w-5 h-5 text-green-600' />
-                                        <p className='text-green-800 font-medium'>
-                                            You are attending this event
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={() =>
-                                            setError(
-                                                'Leave functionality not implemented yet',
-                                            )
-                                        }
-                                        className='px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors font-medium'
-                                    >
-                                        Leave Event
-                                    </button>
+                            <div className='bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between flex-wrap gap-4'>
+                                <div className='flex items-center gap-3'>
+                                    <CheckCircle className='w-5 h-5 text-green-600' />
+                                    <p className='text-green-800 font-medium'>
+                                        You are attending this event
+                                    </p>
                                 </div>
+                                <button
+                                    onClick={handleLeaveEvent}
+                                    className='px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600'
+                                >
+                                    Leave Event
+                                </button>
                             </div>
                         ) : canJoin ? (
                             <button
                                 onClick={handleJoinEvent}
                                 disabled={joining}
-                                className='w-full md:w-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed'
+                                className='w-full md:w-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-lg disabled:opacity-50 flex items-center justify-center gap-2'
                             >
-                                {joining ? 'Joining...' : 'Join Event'}
+                                {joining ? (
+                                    <>
+                                        <div className='animate-spin rounded-full h-5 w-5 border-b-2 border-white'></div>
+                                        Joining...
+                                    </>
+                                ) : (
+                                    'Join Event'
+                                )}
                             </button>
                         ) : (
                             <div className='bg-gray-100 rounded-lg p-4'>
                                 <p className='text-gray-700'>
-                                    {event.status !== 'OPEN' &&
-                                        'This event is not open for joining.'}
-                                    {isFull && 'This event is full.'}
-                                    {event.status === 'OPEN' &&
-                                        !isFull &&
-                                        !isParticipant &&
-                                        'Sign in to join this event.'}
-                                    {!currentUser &&
-                                        'Please sign in to join events.'}
+                                    {!currentUser
+                                        ? 'Please sign in to join this event.'
+                                        : event.status !== 'OPEN'
+                                        ? 'This event is not open for joining.'
+                                        : isFull
+                                        ? 'This event is full.'
+                                        : 'Unable to join this event.'}
                                 </p>
+                                {!currentUser && (
+                                    <button
+                                        onClick={() => router.push('/login')}
+                                        className='mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+                                    >
+                                        Sign In
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Right Column - Organizer & Participants */}
+                {/* Right: Organizer & Participants */}
                 <div className='space-y-8'>
-                    {/* Organizer Info */}
+                    {/* Organizer */}
                     <div className='bg-white rounded-xl shadow-md p-6'>
-                        <h3 className='text-lg font-semibold text-gray-900 mb-4'>
+                        <h3 className='text-lg font-semibold mb-4'>
                             Organizer
                         </h3>
-                        <div className='flex items-center gap-4 mb-4'>
+                        <div className='flex items-center gap-4'>
                             <div className='w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center'>
                                 <User className='w-8 h-8 text-blue-600' />
                             </div>
                             <div>
-                                <h4 className='font-semibold text-gray-900'>
-                                    {organizerName}
+                                <h4 className='font-semibold'>
+                                    {event.host?.name || 'Unknown'}
                                 </h4>
                                 {event.host?.email && (
                                     <p className='text-sm text-gray-600'>
@@ -671,50 +640,52 @@ export default function EventDetails() {
                         </div>
                     </div>
 
-                    {/* Participants List */}
+                    {/* Participants */}
                     <div className='bg-white rounded-xl shadow-md p-6'>
                         <div className='flex items-center justify-between mb-4'>
-                            <h3 className='text-lg font-semibold text-gray-900'>
-                                Participants ({event._count?.participants || 0})
+                            <h3 className='text-lg font-semibold'>
+                                Participants
                             </h3>
                             <span className='text-sm text-gray-600'>
                                 {event._count?.participants || 0} /{' '}
-                                {event.maxParticipants || 0}
+                                {event.maxParticipants}
                             </span>
                         </div>
 
                         <div className='space-y-4 max-h-96 overflow-y-auto'>
-                            {event.participants &&
-                            event.participants.length > 0 ? (
-                                event.participants.map((participant) => (
+                            {event.participants?.length > 0 ? (
+                                event.participants.map((p) => (
                                     <div
-                                        key={participant.id}
+                                        key={p.id}
                                         className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'
                                     >
-                                        <div className='flex items-center gap-3'>
+                                        <div className='flex items-center gap-3 min-w-0 flex-1'>
                                             <div className='w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center'>
                                                 <User className='w-5 h-5 text-blue-600' />
                                             </div>
-                                            <div>
-                                                <p className='font-medium text-gray-900'>
-                                                    {participant.user?.name ||
-                                                        'Unknown User'}
+                                            <div className='min-w-0'>
+                                                <p className='font-medium truncate'>
+                                                    {p.user?.name ||
+                                                        `User ${p.userId.slice(
+                                                            0,
+                                                            8,
+                                                        )}...`}
                                                 </p>
-                                                <p className='text-xs text-gray-500'>
-                                                    {participant.user?.email ||
-                                                        ''}
-                                                </p>
+                                                {p.user?.email && (
+                                                    <p className='text-xs text-gray-500 truncate'>
+                                                        {p.user.email}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                         <span
-                                            className={`text-xs px-2 py-1 rounded-full ${
-                                                participant.status ===
-                                                'CONFIRMED'
+                                            className={`text-xs px-2 py-1 rounded-full ml-2 ${
+                                                p.status === 'CONFIRMED'
                                                     ? 'bg-green-100 text-green-800'
                                                     : 'bg-yellow-100 text-yellow-800'
                                             }`}
                                         >
-                                            {participant.status || 'PENDING'}
+                                            {p.status || 'CONFIRMED'}
                                         </span>
                                     </div>
                                 ))
