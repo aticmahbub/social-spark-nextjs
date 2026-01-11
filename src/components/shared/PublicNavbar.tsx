@@ -14,7 +14,9 @@ import {UserRole} from '@/types/user.types';
 
 export default async function Navbar() {
     const user = await getUserFromToken();
-    const userRole: UserRole | undefined = user?.role;
+    const userRole: UserRole = user ? user.role : 'PUBLIC';
+
+    console.log('user:', user);
 
     return (
         <header className='border-b bg-background'>
